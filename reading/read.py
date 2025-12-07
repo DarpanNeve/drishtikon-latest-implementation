@@ -186,6 +186,45 @@ def capture_image():
 # ================================================================
 def main():
     ensure_results_dir()
+    # ---------------------------------------------------------
+    # CHECK FOR EXISTING READING STATE (Commit 3)
+    # ---------------------------------------------------------
+    state = load_state()
+
+    if state:
+        # Freeze audio
+        tts_main.stop()
+        time.sleep(1.0)
+
+        # Ask user if they want to resume
+        tts_main.play(resume_previous_task_p)
+        while tts_main.is_playing():
+            time.sleep(0.05)
+
+        print("\nPrevious reading task found.")
+        print("Press 'y' to continue or any other key to start a new task.")
+
+        choice = sys.stdin.readline().strip().lower()
+
+        if choice == "y":
+            print("[STATE] Resuming saved reading task...")
+            sentences = state["sentences"]
+            current_index = state["current_index"]
+
+            # Reconstruct read_so_far
+            read_so_far = sentences[:current_index]
+
+            # Skip file selection, OCR and chunking
+            resume_mode = True
+
+        else:
+            print("[STATE] Discarding saved task...")
+            clear_state()
+            resume_mode = False
+
+    else:
+        resume_mode = False
+
 
     # ---------------------------------------------------------
     # INTRO PROMPT
