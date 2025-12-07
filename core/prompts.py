@@ -11,6 +11,12 @@ from core.utils import absolute_path
 # ---------------------------
 # MAIN SYSTEM PROMPTS
 # ---------------------------
+resume_previous_task_p = speak_cached(
+    "Shall I continue with the previous reading task?",
+    "resume_previous_task.wav"
+)
+
+
 select_file_p = speak_cached(
     "Select an image file. If you cancel, I will open the camera.",
     "select_file.wav"
