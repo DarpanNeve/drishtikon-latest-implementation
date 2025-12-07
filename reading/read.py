@@ -26,6 +26,7 @@ from core.summarize import summarize
 
 # NEW CLEAN PROMPTS MODULE
 from core.prompts import *
+
 load_dotenv()
 
 # ================================================================
@@ -450,6 +451,15 @@ def main():
                             tts_summary.stop()
                             time.sleep(1.0)
 
+                            # -------------------------
+                            # SAVE STATE (Commit 4)
+                            # -------------------------
+                            task_state = {
+                                "sentences": sentences,
+                                "current_index": current_index
+                            }
+                            save_state(task_state)
+
                             tts_main.play(exiting_module_p)
                             while tts_main.is_playing():
                                 time.sleep(0.05)
@@ -506,6 +516,15 @@ def main():
                             tts_main.stop()
                             tts_summary.stop()
                             time.sleep(1.0)
+
+                            # -------------------------
+                            # SAVE STATE (Commit 4)
+                            # -------------------------
+                            task_state = {
+                                "sentences": sentences,
+                                "current_index": current_index
+                            }
+                            save_state(task_state)
 
                             tts_main.play(no_content_yet_p)
                             while tts_main.is_playing(): time.sleep(0.05)
@@ -590,6 +609,7 @@ def main():
     # ---------------------------------------------------------
     # ALL SENTENCES COMPLETE
     # ---------------------------------------------------------
+    clear_state
     tts_main.stop()
     tts_summary.stop()
     time.sleep(1.0)
