@@ -187,145 +187,133 @@ def capture_image():
 # ================================================================
 def main():
     ensure_results_dir()
+
     # ---------------------------------------------------------
-    # CHECK FOR EXISTING READING STATE (Commit 3)
+    # CHECK FOR EXISTING READING STATE (resume_mode)
     # ---------------------------------------------------------
     state = load_state()
+    resume_mode = False
 
     if state:
-        # Freeze audio
         tts_main.stop()
+        tts_summary.stop()
         time.sleep(1.0)
 
-        # Ask user if they want to resume
         tts_main.play(resume_previous_task_p)
         while tts_main.is_playing():
             time.sleep(0.05)
 
         print("\nPrevious reading task found.")
         print("Press 'y' to continue or any other key to start a new task.")
-
         choice = sys.stdin.readline().strip().lower()
 
         if choice == "y":
             print("[STATE] Resuming saved reading task...")
             sentences = state["sentences"]
             current_index = state["current_index"]
-
-            # Reconstruct read_so_far
             read_so_far = sentences[:current_index]
-
-            # Skip file selection, OCR and chunking
             resume_mode = True
-
         else:
             print("[STATE] Discarding saved task...")
             clear_state()
             resume_mode = False
 
-    else:
-        resume_mode = False
-
-
     # ---------------------------------------------------------
-    # INTRO PROMPT
+    # NEW TASK: file selection + OCR + chunking
     # ---------------------------------------------------------
-    tts_main.stop()
-    tts_summary.stop()
-    time.sleep(1.0)
-
-    tts_main.play(select_file_p)
-    while tts_main.is_playing():
-        time.sleep(0.05)
-
-    time.sleep(1.0)  # let ALSA settle before Tk
-
-    # ---------------------------------------------------------
-    # STEP 1 — Select file
-    # ---------------------------------------------------------
-    img_path = choose_file()
-
-    if not img_path:
-        # Non-critical info
+    if not resume_mode:
+        # INTRO
         tts_main.stop()
         tts_summary.stop()
         time.sleep(1.0)
 
-        tts_main.play(no_file_p)
+        tts_main.play(select_file_p)
         while tts_main.is_playing():
             time.sleep(0.05)
-
         time.sleep(1.0)
-        img_path = capture_image()
 
-    if not img_path:
+        # STEP 1 — Select file
+        img_path = choose_file()
+
+        if not img_path:
+            tts_main.stop()
+            tts_summary.stop()
+            time.sleep(1.0)
+
+            tts_main.play(no_file_p)
+            while tts_main.is_playing():
+                time.sleep(0.05)
+
+            time.sleep(1.0)
+            img_path = capture_image()
+
+        if not img_path:
+            tts_main.stop()
+            tts_summary.stop()
+            time.sleep(1.0)
+
+            tts_main.play(no_image_exit_p)
+            while tts_main.is_playing():
+                time.sleep(0.05)
+            return
+
+        # OCR PROMPT
         tts_main.stop()
         tts_summary.stop()
         time.sleep(1.0)
 
-        tts_main.play(no_image_exit_p)
+        tts_main.play(processing_p)
         while tts_main.is_playing():
             time.sleep(0.05)
-        return
-
-    # ---------------------------------------------------------
-    # OCR PROMPT
-    # ---------------------------------------------------------
-    tts_main.stop()
-    tts_summary.stop()
-    time.sleep(1.0)
-
-    tts_main.play(processing_p)
-    while tts_main.is_playing():
-        time.sleep(0.05)
-    time.sleep(1.0)
-
-    refinement_prompt = """
-    This image was captured by a blind user.
-    Extract the exact text from the book page.
-    Do not paraphrase or modify anything.
-    Do not add asterisks or other formatting.
-    """
-
-    text, duration = gemini_read(img_path, refinement_prompt)
-    log("READING", img_path, f"{len(text)} chars", duration)
-
-    print("\n===== OCR RESULT =====\n")
-    print(text)
-    print("\n=======================\n")
-
-    if not text.strip():
-        tts_main.stop()
-        tts_summary.stop()
         time.sleep(1.0)
 
-        tts_main.play(empty_page_p)
-        while tts_main.is_playing():
-            time.sleep(0.05)
-        return
+        refinement_prompt = """
+        This image was captured by a blind user.
+        Extract the exact text from the book page.
+        Do not paraphrase or modify anything.
+        Do not add asterisks or other formatting.
+        """
+
+        text, duration = gemini_read(img_path, refinement_prompt)
+        log("READING", img_path, f"{len(text)} chars", duration)
+
+        print("\n===== OCR RESULT =====\n")
+        print(text)
+        print("\n=======================\n")
+
+        if not text.strip():
+            tts_main.stop()
+            tts_summary.stop()
+            time.sleep(1.0)
+
+            tts_main.play(empty_page_p)
+            while tts_main.is_playing():
+                time.sleep(0.05)
+            return
+
+        # CHUNKING
+        sentences = split_into_sentences(text)
+        if not sentences:
+            tts_main.stop()
+            tts_summary.stop()
+            time.sleep(1.0)
+
+            tts_main.play(no_sentences_p)
+            while tts_main.is_playing():
+                time.sleep(0.05)
+            return
+
+        read_so_far = []
+        current_index = 0
 
     # ---------------------------------------------------------
-    # CHUNKING
+    # CHUNK LOOP (supports resume_mode)
     # ---------------------------------------------------------
-    sentences = split_into_sentences(text)
-    if not sentences:
-        tts_main.stop()
-        tts_summary.stop()
-        time.sleep(1.0)
-
-        tts_main.play(no_sentences_p)
-        while tts_main.is_playing():
-            time.sleep(0.05)
-        return
-
-    read_so_far = []
-    current_index = 0
-
     print("\n===== CHUNKED READING (PAUSE + SUMMARY + VOICE MODE) =====\n")
 
-    # ---------------------------------------------------------
-    # CHUNK LOOP
-    # ---------------------------------------------------------
+    if resume_mode:
+        print(f"[RESUME] Continuing from sentence {current_index + 1} of {len(sentences)}")
+
     while current_index < len(sentences):
         sentence = sentences[current_index]
         print(f"[READ] {current_index + 1}/{len(sentences)} → {sentence}")
@@ -334,8 +322,6 @@ def main():
 
         tts_main.stop()
         tts_summary.stop()
-        # time.sleep(1.0)
-
         tts_main.play(sentence_audio)
 
         # -----------------------------
@@ -355,11 +341,10 @@ def main():
                 if key == "p":
                     tts_main.stop()
                     tts_summary.stop()
-                    # time.sleep(1.0)
 
                     tts_main.play(pause_beep)
                     time.sleep(0.3)
-                    
+
                     # ----- PAUSE MENU -----
                     while True:
                         print("\nPaused. Options:")
@@ -370,7 +355,7 @@ def main():
 
                         choice = sys.stdin.readline().strip().lower()
 
-                        # RESUME → restart sentence from start
+                        # RESUME → restart sentence
                         if choice == "p":
                             tts_main.stop()
                             tts_summary.stop()
@@ -447,18 +432,17 @@ def main():
 
                         # QUIT
                         elif choice == "q":
+                            # SAVE STATE BEFORE EXIT
+                            if sentences and 0 <= current_index < len(sentences):
+                                task_state = {
+                                    "sentences": sentences,
+                                    "current_index": current_index,
+                                }
+                                save_state(task_state)
+
                             tts_main.stop()
                             tts_summary.stop()
                             time.sleep(1.0)
-
-                            # -------------------------
-                            # SAVE STATE (Commit 4)
-                            # -------------------------
-                            task_state = {
-                                "sentences": sentences,
-                                "current_index": current_index
-                            }
-                            save_state(task_state)
 
                             tts_main.play(exiting_module_p)
                             while tts_main.is_playing():
@@ -468,6 +452,7 @@ def main():
                         else:
                             print("Invalid option.")
                             continue
+
                 # =====================================================
                 # (v) — VOICE MODE
                 # =====================================================
@@ -479,12 +464,14 @@ def main():
                     time.sleep(1.0)
 
                     tts_main.play(vc_intro_p)
-                    while tts_main.is_playing(): time.sleep(0.05)
+                    while tts_main.is_playing():
+                        time.sleep(0.05)
                     time.sleep(1.0)
 
                     command = listen_for_command()
 
                     if command is None:
+                        # Auto resume on failure
                         command = "resume"
 
                     # RESUME
@@ -502,12 +489,21 @@ def main():
 
                     # QUIT
                     elif command == "quit":
+                        # SAVE STATE BEFORE EXIT
+                        if sentences and 0 <= current_index < len(sentences):
+                            task_state = {
+                                "sentences": sentences,
+                                "current_index": current_index,
+                            }
+                            save_state(task_state)
+
                         tts_main.stop()
                         tts_summary.stop()
                         time.sleep(1.0)
 
                         tts_main.play(exiting_module_p)
-                        while tts_main.is_playing(): time.sleep(0.05)
+                        while tts_main.is_playing():
+                            time.sleep(0.05)
                         return
 
                     # SUMMARY
@@ -517,17 +513,9 @@ def main():
                             tts_summary.stop()
                             time.sleep(1.0)
 
-                            # -------------------------
-                            # SAVE STATE (Commit 4)
-                            # -------------------------
-                            task_state = {
-                                "sentences": sentences,
-                                "current_index": current_index
-                            }
-                            save_state(task_state)
-
                             tts_main.play(no_content_yet_p)
-                            while tts_main.is_playing(): time.sleep(0.05)
+                            while tts_main.is_playing():
+                                time.sleep(0.05)
                             continue
 
                         tts_main.stop()
@@ -535,7 +523,8 @@ def main():
                         time.sleep(1.0)
 
                         tts_main.play(generating_summary_p)
-                        while tts_main.is_playing(): time.sleep(0.05)
+                        while tts_main.is_playing():
+                            time.sleep(0.05)
                         time.sleep(1.0)
 
                         summary_text = summarize(" ".join(read_so_far))
@@ -563,7 +552,8 @@ def main():
                                     time.sleep(1.0)
 
                                     tts_main.play(stopping_summary_p)
-                                    while tts_main.is_playing(): time.sleep(0.05)
+                                    while tts_main.is_playing():
+                                        time.sleep(0.05)
                                     break
 
                             time.sleep(0.05)
@@ -574,7 +564,8 @@ def main():
                         time.sleep(1.0)
 
                         tts_main.play(vc_back_p)
-                        while tts_main.is_playing(): time.sleep(0.05)
+                        while tts_main.is_playing():
+                            time.sleep(0.05)
                         time.sleep(1.0)
                         continue
 
@@ -584,23 +575,11 @@ def main():
                         time.sleep(1.0)
 
                         tts_main.play(vc_unknown_p)
-                        while tts_main.is_playing(): time.sleep(0.05)
+                        while tts_main.is_playing():
+                            time.sleep(0.05)
                         time.sleep(1.0)
 
-
-                    # Too many failures → auto-return to reading
-                    tts_main.stop()
-                    tts_summary.stop()
-                    time.sleep(1.0)
-
-                    tts_main.play(return_to_reading_p)
-                    while tts_main.is_playing(): time.sleep(0.05)
-                    time.sleep(1.0)
-
-                    sentence_audio = speak(sentence)
-                    tts_main.play(sentence_audio)
-
-                time.sleep(0.05)
+            time.sleep(0.05)
 
         # Finished this sentence
         read_so_far.append(sentence)
@@ -609,7 +588,8 @@ def main():
     # ---------------------------------------------------------
     # ALL SENTENCES COMPLETE
     # ---------------------------------------------------------
-    clear_state
+    clear_state()  # finished → no more resume
+
     tts_main.stop()
     tts_summary.stop()
     time.sleep(1.0)
