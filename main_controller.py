@@ -10,19 +10,27 @@ if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
 from core.stt import listen
-from core.tts import speak, speak_blocking
 from core.logger import log
 from core.utils import absolute_path
-
+from core.tts_player import tts_main
+from core.prompts_main_controller import (
+    system_ready_p,
+    opening_reading_p,
+    opening_detection_p,
+    goodbye_p,
+    did_not_understand_p,
+    emergency_stop_p,
+    module_not_found_p,
+    launch_error_p
+)
 
 # ================================================================
-#   PROCESS TRACKING
+# PROCESS TRACKING
 # ================================================================
 active_processes = []
 
-
 # ================================================================
-#   EMERGENCY STOP (RPi Safe)
+# EMERGENCY STOP (RPi Safe)
 # ================================================================
 
 def kill_all_processes():
@@ -52,22 +60,29 @@ def kill_all_processes():
 def linux_stop_listener():
     """
     On Raspberry Pi, there is no global keyboard hook.
-    So we listen for a simple file-based STOP trigger.
-    If the user creates /tmp/stop.txt → system stops.
+    Trigger emergency stop by creating /tmp/stop.txt.
     """
     print("[STOP] Linux STOP listener active (create /tmp/stop.txt to force stop).")
 
     while True:
         if os.path.exists("/tmp/stop.txt"):
             print("[STOP] Emergency stop signal detected via /tmp/stop.txt.")
-            speak_blocking("Emergency stop activated.")
+
+            tts_main.stop()
+            time.sleep(1.0)
+
+            tts_main.play(emergency_stop_p)
+            while tts_main.is_playing():
+                time.sleep(0.05)
+
             kill_all_processes()
             os._exit(0)
+
         time.sleep(1)
 
 
 # ================================================================
-#   MODULE LAUNCHER
+# MODULE LAUNCHER
 # ================================================================
 
 def start_process(relative_path):
@@ -75,7 +90,15 @@ def start_process(relative_path):
     target = absolute_path(relative_path)
 
     if not os.path.exists(target):
-        speak_blocking(f"Module {relative_path} not found.")
+        print(f"[MAIN] Missing module: {relative_path}")
+
+        tts_main.stop()
+        time.sleep(1.0)
+
+        tts_main.play(module_not_found_p)
+        while tts_main.is_playing():
+            time.sleep(0.05)
+
         log("MAIN", relative_path, "Missing module")
         return
 
@@ -91,19 +114,29 @@ def start_process(relative_path):
 
     except Exception as e:
         log("MAIN", relative_path, f"Launch error: {e}")
-        speak_blocking("Unable to launch module.")
+
+        tts_main.stop()
+        time.sleep(1.0)
+
+        tts_main.play(launch_error_p)
+        while tts_main.is_playing():
+            time.sleep(0.05)
 
 
 # ================================================================
-#   MAIN LOOP
+# MAIN LOOP
 # ================================================================
 
 def main():
-    speak_blocking("System ready. Say read, detect, or exit.")
-    print("[MAIN] Awaiting commands...")
-
-    # Start RPi-safe STOP listener
+    # Start STOP listener thread
     threading.Thread(target=linux_stop_listener, daemon=True).start()
+
+    # Speak intro
+    tts_main.stop()
+    time.sleep(1.0)
+    tts_main.play(system_ready_p)
+
+    print("[MAIN] Awaiting commands...")
 
     while True:
         cmd = listen()
@@ -113,27 +146,58 @@ def main():
         cmd = cmd.lower().strip()
         print(f"[MAIN] Heard: {cmd}")
 
-        # Reading module
+        # -----------------------------
+        # READING MODULE
+        # -----------------------------
         if "read" in cmd:
-            speak_blocking("Opening reading module.")
+            tts_main.stop()
+            time.sleep(1.0)
+            tts_main.play(opening_reading_p)
+            while tts_main.is_playing():
+                time.sleep(0.05)
+
             log("MAIN", "-", "Launch reading")
             start_process("reading/read.py")
             continue
 
-        # Object detection module
+        # -----------------------------
+        # OBJECT DETECTION MODULE
+        # -----------------------------
         if "detect" in cmd or "object" in cmd:
-            speak_blocking("Opening object detection module.")
+            tts_main.stop()
+            time.sleep(1.0)
+            tts_main.play(opening_detection_p)
+            while tts_main.is_playing():
+                time.sleep(0.05)
+
             log("MAIN", "-", "Launch YOLO")
             start_process("yolo/detect.py")
             continue
 
-        # Exit
+        # -----------------------------
+        # EXIT SYSTEM
+        # -----------------------------
         if "exit" in cmd or "quit" in cmd:
-            speak_blocking("Goodbye.")
+            tts_main.stop()
+            time.sleep(1.0)
+
+            tts_main.play(goodbye_p)
+            while tts_main.is_playing():
+                time.sleep(0.05)
+
             kill_all_processes()
             break
 
-        speak_blocking("I did not understand.")
+        # -----------------------------
+        # UNKNOWN COMMAND
+        # -----------------------------
+        tts_main.stop()
+        time.sleep(1.0)
+
+        tts_main.play(did_not_understand_p)
+        while tts_main.is_playing():
+            time.sleep(0.05)
+
         log("MAIN", "-", f"Unknown command: {cmd}")
 
 

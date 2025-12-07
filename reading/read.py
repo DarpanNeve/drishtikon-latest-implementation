@@ -19,7 +19,7 @@ if PROJECT_ROOT not in sys.path:
 
 from core.utils import absolute_path, ensure_dir, load_credential_path
 from core.tts import speak
-from core.tts_player import tts_main, tts_summary     # tts_prompt no longer needed
+from core.tts_player import tts_main, tts_summary
 from core.logger import log
 from core.text_utils import split_into_sentences
 from core.summarize import summarize
