@@ -62,6 +62,18 @@ return_to_reading_p = speak_cached(
     "return_to_reading.wav"
 )
 
+# -------------------------
+# ASK QUERY PROMPTS
+# -------------------------
+ask_query_intro_p = speak_cached(
+    "Please ask a question.",
+    "please_ask_a_question.wav"
+)
+
+generating_answer_p = speak_cached(
+    "Finding answer",
+    "finding_answer.wav"
+)
 
 # ---------------------------
 # PAUSE MENU PROMPTS
