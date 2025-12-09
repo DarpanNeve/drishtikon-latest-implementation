@@ -23,6 +23,7 @@ from core.tts_player import tts_main, tts_summary
 from core.logger import log
 from core.text_utils import split_into_sentences
 from core.summarize import summarize
+from core.query import answer_query
 
 # NEW CLEAN PROMPTS MODULE
 from core.prompts import *
