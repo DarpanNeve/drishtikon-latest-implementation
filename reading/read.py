@@ -264,22 +264,26 @@ def main():
         Do not add asterisks or other formatting.
         """
 
-        text, duration = gemini_read(img_path, refinement_prompt)
-        log("READING", img_path, f"{len(text)} chars", duration)
+        # text, duration = gemini_read(img_path, refinement_prompt)
+        # log("READING", img_path, f"{len(text)} chars", duration)
 
-        print("\n===== OCR RESULT =====\n")
-        print(text)
-        print("\n=======================\n")
+        # print("\n===== OCR RESULT =====\n")
+        # print(text)
+        # print("\n=======================\n")
 
-        if not text.strip():
-            tts_main.stop()
-            tts_main.play(empty_page_p)
-            while tts_main.is_playing():
-                time.sleep(0.05)
-            return
+        # if not text.strip():
+        #     tts_main.stop()
+        #     tts_main.play(empty_page_p)
+        #     while tts_main.is_playing():
+        #         time.sleep(0.05)
+        #     return
 
         # CHUNKING
-        sentences = split_into_sentences(text)
+        # sentences = split_into_sentences(text)
+        sentences = ['After walking for many hours along an intricate series of paths\nand grassy trails, the two travellers came upon a lush, green\nvalley.', 'On one side of the valley, the snow-capped Himalayas\noffered their protection, like weather-beaten soldiers guarding\nthe place where their generals rested.', 'On the other, a thick forest\nof pine trees sprouted, a perfectly natural tribute to this\nenchanting fantasyland.', 'The sage looked at Julian and smiled gently.', '"Welcome to the\nNirvana of Sivana.', '"\n\nThe two then descended along another less-travelled way and\ninto the thick forest that formed the floor of the valley.', 'The smell\nof pine and sandalwood wafted through the cool, crisp mountain\nair.', 'Julian, now barefoot to ease his aching feet, felt the damp moss\nunder his toes.', 'He was surprised to see richly colored orchids and\na host of other lovely flowers dancing among the trees, as if\nrejoicing in the beauty and splendor of this tiny slice of Heaven.', 'In the distance, Julian could hear gentle voices, soft and\nsoothing to the ear.', 'He continued to follow the sage without\nmaking a sound.', 'After walking for about fifteen more minutes, the\n24\n\nCHAPTER FOUR\n\nA Magical Meeting with\nthe Sages of Sivana\n\ntwo men reached a clearing.', 'Before him was a sight that even the\nworldly wise and rarely surprised Julian Mantle could never have\nimagined — a small village made solely out of what appeared to be\nroses.', 'At the center of the village was a tiny temple, the kind\nJulian had seen on his trips to Thailand and Nepal, but this temple\nwas made of red, white and pink flowers, held together with long\nstrands of multi-colored string and twigs.', 'The little huts that\ndotted the remaining space appeared to be the austere homes of\nthe sages.', 'These were also made of roses.', 'Julian was speechless.', 'As for the monks who inhabited the village, those he could see\nlooked like Julian’s travelling companion, who now revealed that\nhis name was Yogi Raman and the leader of this group.', 'The citizens of this\nsage of Sivana and the leader of this group.', 'The citizens of this\ndreamlike colony looked astonishingly youthful and moved with\npoise and purpose.', 'None of them spoke, choosing instead to\nrespect the tranquility of this place by performing their tasks in\nsilence.', 'The men, who appeared to number only about ten, wore the\nsame red-robed uniform as Yogi Raman and smiled serenely at\nJulian as he entered their village.', 'Each of them looked calm,\nhealthy and deeply contented.', 'It was as if the tensions that plague\nso many of us in our modern world had sensed that they were not\nwelcome at this summit of serenity and moved on to more inviting\nprospects.', 'Though it had been many years since there had been a\nnew face among them, these men were controlled in their\nreception, offering a simple bow as their greeting to this visitor\nwho had travelled so far to find them.', 'The women were equally impressive.', 'In their flowing pink silk\nsaris and with white lotusess adorning their jet black hair, they\nmoved busily through the village with exceptional agility.', '25\n\nThe Monk Who Sold His Ferrari']
+
+        # print(sentences)
+
         if not sentences:
             tts_main.play(no_sentences_p)
             while tts_main.is_playing():
@@ -335,6 +339,7 @@ def main():
                         print(" m = summarize what has been read so far")
                         print(" q = quit reading module")
                         print(" x = ask a query")
+                        print(" r = RAG search")
                         sys.stdout.flush()
                         choice = sys.stdin.readline().strip().lower()
 
@@ -346,6 +351,124 @@ def main():
                             tts_main.play(sentence_audio)
                             break
 
+                        # =====================================================
+                        # (r) — RAG MODE (GLOBAL QUESTION ANSWERING)
+                        # =====================================================
+                        elif choice == "r":
+                            tts_main.stop()
+                            tts_summary.stop()
+
+                            # Ask for user query
+                            tts_main.play(ask_query_intro_p)
+                            while tts_main.is_playing():
+                                time.sleep(0.05)
+
+                            print("\nType your RAG question:")
+                            question = sys.stdin.readline().strip()
+
+                            if not question:
+                                tts_main.play(back_pause_menu_p)
+                                while tts_main.is_playing():
+                                    time.sleep(0.05)
+                                continue
+
+                            # ---------------------------------------------
+                            # 1. CREATE STORE (OR LOAD PREVIOUS)
+                            # ---------------------------------------------
+                            from google import genai
+                            from google.genai import types
+
+                            client = genai.Client()
+
+                            # You may want to cache this outside, but for now:
+                            file_search_store = client.file_search_stores.create(
+                                config={'display_name': 'reading-session-store'}
+                            )
+
+                            # ---------------------------------------------
+                            # 2. UPLOAD TEXT TO STORE
+                            #    (convert read_so_far to a temp .txt file)
+                            # ---------------------------------------------
+                            import tempfile
+
+                            with tempfile.NamedTemporaryFile(delete=False, suffix=".txt") as f:
+                                f.write(" ".join(read_so_far).encode("utf-8"))
+                                text_path = f.name
+
+                            # Upload + index
+                            tts_main.play(generating_answer_p)
+                            while tts_main.is_playing():
+                                time.sleep(0.05)
+
+                            op = client.file_search_stores.upload_to_file_search_store(
+                                file=text_path,
+                                file_search_store_name=file_search_store.name,
+                                config={
+                                    "display_name": "reading_context",
+                                    "chunking_config": {
+                                        "white_space_config": {
+                                            "max_tokens_per_chunk": 200,
+                                            "max_overlap_tokens": 20
+                                        }
+                                    }
+                                }
+                            )
+
+                            # Wait until indexing finishes
+                            while not op.done:
+                                time.sleep(2)
+                                op = client.operations.get(op)
+
+                            # ---------------------------------------------
+                            # 3. QUERY USING FILE SEARCH
+                            # ---------------------------------------------
+                            response = client.models.generate_content(
+                                model="gemini-2.5-flash",
+                                contents=question,
+                                config=types.GenerateContentConfig(
+                                    tools=[
+                                        types.Tool(
+                                            file_search=types.FileSearch(
+                                                file_search_store_names=[file_search_store.name]
+                                            )
+                                        )
+                                    ]
+                                )
+                            )
+
+                            answer = response.text or "Sorry, I could not find an answer."
+
+                            # ---------------------------------------------
+                            # 4. PLAY ANSWER
+                            # ---------------------------------------------
+                            print("\n======== RAG ANSWER ========\n")
+                            print(answer)
+
+                            answer_audio = speak(answer)
+
+                            tts_summary.stop()
+                            tts_summary.play(answer_audio)
+
+                            print("Answer mode — press 's' to stop")
+
+                            while True:
+                                if not tts_summary.is_playing():
+                                    break
+
+                                if sys.stdin in select.select([sys.stdin], [], [], 0)[0]:
+                                    if sys.stdin.readline().strip().lower() == "s":
+                                        tts_summary.stop()
+                                        tts_main.play(stopping_summary_p)
+                                        while tts_main.is_playing():
+                                            time.sleep(0.05)
+                                        break
+
+                            # Back to pause menu
+                            tts_main.play(back_pause_menu_p)
+                            while tts_main.is_playing():
+                                time.sleep(0.05)
+
+                            continue
                         # SUMMARY
                         elif choice == "m":
                             if not read_so_far:
@@ -419,7 +542,8 @@ def main():
                 elif key == "v":
                     tts_main.play(pause_beep)
                     tts_main.stop()
-
+                    tts_main.play(vc_intro_p)
+                    time.sleep(5)
                     # ----- PAUSE MENU -----
                     while True:
                         choice = listen_for_command()

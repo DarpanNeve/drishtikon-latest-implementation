@@ -103,7 +103,7 @@ back_pause_menu_p = speak_cached(
 # VOICE CONTROL PROMPTS
 # ---------------------------
 vc_intro_p = speak_cached(
-    "Voice control. Say summary, resume, or quit.",
+    "Voice control. Say summary, doubt, resume, or quit.",
     "voice_intro.wav"
 )
 
@@ -122,6 +122,12 @@ vc_back_p = speak_cached(
     "back_voice.wav"
 )
 
+
+# ---------------------------
+# RAG SEARCH PROMPTS
+# ---------------------------
+enter_rag_mode_p = speak_cached("This is RAG search. Ask your query", "rag_intro.wav")
+generating_rag_answer_p = speak_cached("Searching...", "generating_rag_answer.wav")
 
 # ---------------------------
 # BEEPS (non‑TTS files)
