@@ -14,6 +14,7 @@ VALID_COMMANDS = {
     "p": ["resume", "continue", "start"],
     "q": ["quit", "exit", "end", "read", "detect", "stop"],
     "m": ["summary", "summarize", "summarise"],
+    "x": ["query", "doubt", "question"]
 }
 
 

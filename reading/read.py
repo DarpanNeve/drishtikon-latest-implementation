@@ -334,6 +334,7 @@ def main():
                         print(" p = resume this part")
                         print(" m = summarize what has been read so far")
                         print(" q = quit reading module")
+                        print(" x = ask a query")
                         sys.stdout.flush()
                         choice = sys.stdin.readline().strip().lower()
 
@@ -476,6 +477,94 @@ def main():
                             while tts_main.is_playing():
                                 time.sleep(0.05)
                             continue
+                            
+                        elif choice == "x":
+                            # Ask user for a question
+                            tts_main.stop()
+                            tts_summary.stop()
+                            time.sleep(1.0)
+
+                            tts_main.play(ask_query_intro_p)
+                            while tts_main.is_playing():
+                                time.sleep(0.05)
+
+                            print("\nType your question and press ENTER (or just press ENTER to cancel):")
+                            sys.stdout.flush()
+                            question = sys.stdin.readline().strip()
+
+                            # If user didn't type anything → back to pause menu
+                            if not question.strip():
+                                tts_main.stop()
+                                tts_summary.stop()
+                                time.sleep(1.0)
+
+                                tts_main.play(back_pause_menu_p)
+                                while tts_main.is_playing():
+                                    time.sleep(0.05)
+                                continue   # back to pause menu loop
+
+                            # We have a question → generate answer
+                            tts_main.stop()
+                            tts_summary.stop()
+                            time.sleep(1.0)
+
+                            tts_main.play(generating_answer_p)
+                            while tts_main.is_playing():
+                                time.sleep(0.05)
+
+                            # NOTE: answer_query(text, question)
+                            answer = answer_query(" ".join(read_so_far), question)
+
+                            print("\n========ANSWER=======\n")
+                            print(answer)
+
+                            if not answer.strip():
+                                tts_main.stop()
+                                tts_summary.stop()
+                                time.sleep(1.0)
+
+                                tts_main.play(back_pause_menu_p)
+                                while tts_main.is_playing():
+                                    time.sleep(0.05)
+                                continue
+
+                            # Speak the answer
+                            answer_audio = speak(answer)
+
+                            tts_main.stop()
+                            tts_summary.stop()
+                            time.sleep(1.0)
+
+                            tts_summary.play(answer_audio)
+                            print("Answer mode — press 's' to stop")
+
+                            # Let user stop the answer with 's'
+                            while True:
+                                if not tts_summary.is_playing():
+                                    break
+
+                                if sys.stdin in select.select([sys.stdin], [], [], 0)[0]:
+                                    if sys.stdin.readline().strip().lower() == "s":
+                                        tts_summary.stop()
+                                        time.sleep(1.0)
+
+                                        tts_main.play(stopping_summary_p)
+                                        while tts_main.is_playing():
+                                            time.sleep(0.05)
+                                        break
+
+                                time.sleep(0.05)
+
+                            # Back to pause menu after answer
+                            tts_main.stop()
+                            tts_summary.stop()
+                            time.sleep(1.0)
+
+                            tts_main.play(back_pause_menu_p)
+                            while tts_main.is_playing():
+                                time.sleep(0.05)
+                            continue
+
 
                         # QUIT
                         elif choice == "q":
