@@ -489,7 +489,7 @@ def main():
                                 time.sleep(0.05)
 
                             # Listen for user's voice question
-                            question = listen_for_command()
+                            question = listen_for_command(is_question=True)
 
                             if question is None or not question.strip():
                                 # No question → back to voice control

@@ -32,10 +32,10 @@ def normalize_command(text):
         for v in variants:
             if v in text:
                 return command
-    return text
+    return None
 
 
-def listen_for_command(max_attempts=3):
+def listen_for_command(max_attempts=2, is_question=False):
     """
     Attempt STT max_attempts times.
     Returns the recognized command or None if failed.
@@ -52,8 +52,11 @@ def listen_for_command(max_attempts=3):
 
         stt_text = listen()
         print(f"[VOICE] Heard: {stt_text}")
+        if is_question:
+            command = stt_text
+        else:
+            command = normalize_command(stt_text)
 
-        command = normalize_command(stt_text)
         if command:
             print(f"[VOICE] Recognized command: {command}")
             return command
