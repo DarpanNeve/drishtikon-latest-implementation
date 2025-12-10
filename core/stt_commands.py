@@ -32,7 +32,7 @@ def normalize_command(text):
         for v in variants:
             if v in text:
                 return command
-    return None
+    return text
 
 
 def listen_for_command(max_attempts=3):
