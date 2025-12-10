@@ -13,3 +13,4 @@ audio_files/
 annotated_images/
 results/
 test.*
+read_resurrect.py

@@ -19,6 +19,7 @@ if PROJECT_ROOT not in sys.path:
 
 from core.utils import absolute_path, ensure_dir, load_credential_path
 from core.tts import speak
+from core.stt_commands import listen_for_command
 from core.tts_player import tts_main, tts_summary
 from core.logger import log
 from core.text_utils import split_into_sentences
@@ -198,9 +199,6 @@ def main():
 
     if state:
         tts_main.stop()
-        tts_summary.stop()
-        time.sleep(1.0)
-
         # Ask if resume
         tts_main.play(resume_previous_task_p)
         while tts_main.is_playing():
@@ -228,8 +226,6 @@ def main():
 
         # INTRO
         tts_main.stop()
-        tts_summary.stop()
-        time.sleep(1.0)
 
         tts_main.play(select_file_p)
         while tts_main.is_playing():
@@ -241,21 +237,14 @@ def main():
 
         if not img_path:
             tts_main.stop()
-            tts_summary.stop()
-            time.sleep(1.0)
-
             tts_main.play(no_file_p)
             while tts_main.is_playing():
                 time.sleep(0.05)
 
-            time.sleep(1.0)
             img_path = capture_image()
 
         if not img_path:
             tts_main.stop()
-            tts_summary.stop()
-            time.sleep(1.0)
-
             tts_main.play(no_image_exit_p)
             while tts_main.is_playing():
                 time.sleep(0.05)
@@ -263,9 +252,6 @@ def main():
 
         # OCR PROMPT
         tts_main.stop()
-        tts_summary.stop()
-        time.sleep(1.0)
-
         tts_main.play(processing_p)
         while tts_main.is_playing():
             time.sleep(0.05)
@@ -287,9 +273,6 @@ def main():
 
         if not text.strip():
             tts_main.stop()
-            tts_summary.stop()
-            time.sleep(1.0)
-
             tts_main.play(empty_page_p)
             while tts_main.is_playing():
                 time.sleep(0.05)
@@ -298,10 +281,6 @@ def main():
         # CHUNKING
         sentences = split_into_sentences(text)
         if not sentences:
-            tts_main.stop()
-            tts_summary.stop()
-            time.sleep(1.0)
-
             tts_main.play(no_sentences_p)
             while tts_main.is_playing():
                 time.sleep(0.05)
@@ -317,9 +296,6 @@ def main():
 
     if resume_mode:
         print(f"[RESUME] Continuing from sentence {current_index + 1} of {len(sentences)}")
-        tts_main.stop()
-        tts_summary.stop()
-        time.sleep(0.5)
 
     # Summary cache vars
     last_summary_audio = None
@@ -330,16 +306,14 @@ def main():
         sentence = sentences[current_index]
         print(f"[READ] {current_index + 1}/{len(sentences)} → {sentence}")
 
-        sentence_audio = speak(sentence)
-
-        tts_main.stop()
-        tts_summary.stop()
+        audio_file_name = f"sentence_0{current_index}.wav" if current_index < 10 else f"sentence_{current_index}.wav"
+        sentence_audio = speak_cached(sentence, audio_file_name)
         tts_main.play(sentence_audio)
-
         # -----------------------------
         # PLAYBACK MONITOR
         # -----------------------------
         while True:
+            # print("[KEY]", key)
             if not tts_main.is_playing():
                 break
 
@@ -347,15 +321,12 @@ def main():
             if sys.stdin in select.select([sys.stdin], [], [], 0)[0]:
                 key = sys.stdin.readline().strip().lower()
 
-                # =====================================================
-                # (p) — PAUSE
-                # =====================================================
+            # =====================================================
+            # (p) — PAUSE
+            # =====================================================
                 if key == "p":
-                    tts_main.stop()
-                    tts_summary.stop()
-
                     tts_main.play(pause_beep)
-                    time.sleep(0.3)
+                    tts_main.stop()
 
                     # ----- PAUSE MENU -----
                     while True:
@@ -364,39 +335,23 @@ def main():
                         print(" m = summarize what has been read so far")
                         print(" q = quit reading module")
                         sys.stdout.flush()
-
                         choice = sys.stdin.readline().strip().lower()
 
                         # RESUME → restart sentence
                         if choice == "p":
-                            tts_main.stop()
-                            tts_summary.stop()
-                            time.sleep(1.0)
-
                             tts_main.play(resume_beep)
-                            time.sleep(0.3)
-
                             sentence_audio = speak(sentence)
+                            print("[PATH]", sentence_audio)
                             tts_main.play(sentence_audio)
                             break
 
                         # SUMMARY
                         elif choice == "m":
-
                             if not read_so_far:
-                                tts_main.stop()
-                                tts_summary.stop()
-
-                                time.sleep(1.0)
-
                                 tts_main.play(no_content_yet_p)
                                 while tts_main.is_playing():
                                     time.sleep(0.05)
                                 continue
-
-                            tts_main.stop()
-                            tts_summary.stop()
-                            time.sleep(1.0)
 
                             # Reuse cached summary if applicable
                             if last_summary_audio is not None and last_summary_index == current_index:
@@ -405,7 +360,6 @@ def main():
                                 tts_main.play(generating_summary_p)
                                 while tts_main.is_playing():
                                     time.sleep(0.05)
-                                time.sleep(1.0)
 
                                 summary_text = summarize(" ".join(read_so_far))
                                 summary_audio = speak(summary_text)
@@ -417,9 +371,6 @@ def main():
                                 last_summary_index = current_index
 
                             tts_main.stop()
-                            tts_summary.stop()
-                            time.sleep(1.0)
-
                             tts_summary.play(summary_audio)
 
                             print("Summary mode — press 's' to stop")
@@ -430,24 +381,12 @@ def main():
 
                                 if sys.stdin in select.select([sys.stdin], [], [], 0)[0]:
                                     if sys.stdin.readline().strip().lower() == "s":
-                                        tts_main.stop()
                                         tts_summary.stop()
-                                
-                                        time.sleep(1.0)
-
                                         tts_main.play(stopping_summary_p)
                                         while tts_main.is_playing():
                                             time.sleep(0.05)
                                         break
-
-                                time.sleep(0.05)
-
-                            # Back to pause menu
                             tts_main.stop()
-                            tts_summary.stop()
-                    
-                            time.sleep(1.0)
-
                             tts_main.play(back_pause_menu_p)
                             while tts_main.is_playing():
                                 time.sleep(0.05)
@@ -464,11 +403,6 @@ def main():
                                 }
                                 save_state(task_state)
 
-                            tts_main.stop()
-                            tts_summary.stop()
-                    
-                            time.sleep(1.0)
-
                             tts_main.play(exiting_module_p)
                             while tts_main.is_playing():
                                 time.sleep(0.05)
@@ -478,148 +412,90 @@ def main():
                             print("Invalid option.")
                             continue
 
-                # =====================================================
-                # (v) — VOICE MODE
-                # =====================================================
+            # =====================================================
+            # (v) — VOICE MODE
+            # =====================================================
                 elif key == "v":
-                    from core.stt_commands import listen_for_command
-
+                    tts_main.play(pause_beep)
                     tts_main.stop()
-                    tts_summary.stop()
-            
-                    time.sleep(1.0)
 
-                    tts_main.play(vc_intro_p)
-                    while tts_main.is_playing():
-                        time.sleep(0.05)
-                    time.sleep(1.0)
+                    # ----- PAUSE MENU -----
+                    while True:
+                        choice = listen_for_command()
+                        # RESUME → restart sentence
+                        if choice is None or choice == "p":
+                            tts_main.play(resume_beep)
+                            sentence_audio = speak(sentence)
+                            print("[PATH]", sentence_audio)
+                            tts_main.play(sentence_audio)
+                            break
 
-                    command = listen_for_command()
+                        # SUMMARY
+                        elif choice == "m":
+                            if not read_so_far:
+                                tts_main.play(no_content_yet_p)
+                                while tts_main.is_playing():
+                                    time.sleep(0.05)
+                                continue
 
-                    if command is None:
-                        command = "resume"
+                            # Reuse cached summary if applicable
+                            if last_summary_audio is not None and last_summary_index == current_index:
+                                summary_audio = last_summary_audio
+                            else:
+                                tts_main.play(generating_summary_p)
+                                while tts_main.is_playing():
+                                    time.sleep(0.05)
 
-                    # RESUME
-                    if command == "resume":
-                        tts_main.stop()
-                        tts_summary.stop()
-                
-                        time.sleep(1.0)
+                                summary_text = summarize(" ".join(read_so_far))
+                                summary_audio = speak(summary_text)
 
-                        tts_main.play(resume_beep)
-                        time.sleep(0.3)
+                                print("\n========SUMMARY=======\n")
+                                print(summary_text)
 
-                        sentence_audio = speak(sentence)
-                        tts_main.play(sentence_audio)
-                        break
+                                last_summary_audio = summary_audio
+                                last_summary_index = current_index
 
-                    # QUIT
-                    elif command == "quit":
-
-                        if sentences and 0 <= current_index < len(sentences):
-                            task_state = {
-                                "sentences": sentences,
-                                "current_index": current_index,
-                            }
-                            save_state(task_state)
-
-                        tts_main.stop()
-                        tts_summary.stop()
-                
-                        time.sleep(1.0)
-
-                        tts_main.play(exiting_module_p)
-                        while tts_main.is_playing():
-                            time.sleep(0.05)
-                        return
-
-                    # SUMMARY
-                    elif command == "summary":
-
-                        if not read_so_far:
                             tts_main.stop()
-                            tts_summary.stop()
-                    
-                            time.sleep(1.0)
+                            tts_summary.play(summary_audio)
 
-                            tts_main.play(no_content_yet_p)
+                            print("Summary mode — press 's' to stop")
+
+                            while True:
+                                if not tts_summary.is_playing():
+                                    break
+
+                                if sys.stdin in select.select([sys.stdin], [], [], 0)[0]:
+                                    if sys.stdin.readline().strip().lower() == "s":
+                                        tts_summary.stop()
+                                        tts_main.play(stopping_summary_p)
+                                        while tts_main.is_playing():
+                                            time.sleep(0.05)
+                                        break
+                            tts_main.stop()
+                            tts_main.play(back_pause_menu_p)
                             while tts_main.is_playing():
                                 time.sleep(0.05)
                             continue
 
-                        tts_main.stop()
-                        tts_summary.stop()
-                
-                        time.sleep(1.0)
+                        # QUIT
+                        elif choice == "q":
 
-                        if last_summary_audio is not None and last_summary_index == current_index:
-                            summary_audio = last_summary_audio
-                        else:
-                            tts_main.play(generating_summary_p)
+                            # SAVE STATE BEFORE EXIT
+                            if sentences and 0 <= current_index < len(sentences):
+                                task_state = {
+                                    "sentences": sentences,
+                                    "current_index": current_index,
+                                }
+                                save_state(task_state)
+
+                            tts_main.play(exiting_module_p)
                             while tts_main.is_playing():
                                 time.sleep(0.05)
-                            time.sleep(1.0)
+                            return
 
-                            summary_text = summarize(" ".join(read_so_far))
-                            summary_audio = speak(summary_text)
-
-                            print("\n========SUMMARY=======\n")
-                            print(summary_text)
-
-                            last_summary_audio = summary_audio
-                            last_summary_index = current_index
-
-                        tts_main.stop()
-                        tts_summary.stop()
-                
-                        time.sleep(1.0)
-
-                        tts_summary.play(summary_audio)
-
-                        print("Summary mode — press 's' to stop")
-
-                        while True:
-                            if not tts_summary.is_playing():
-                                break
-
-                            if sys.stdin in select.select([sys.stdin], [], [], 0)[0]:
-                                if sys.stdin.readline().strip().lower() == "s":
-                                    tts_main.stop()
-                                    tts_summary.stop()
-                            
-                                    time.sleep(1.0)
-
-                                    tts_main.play(stopping_summary_p)
-                                    while tts_main.is_playing():
-                                        time.sleep(0.05)
-                                    break
-
-                            time.sleep(0.05)
-
-                        # Back to voice control
-                        tts_main.stop()
-                        tts_summary.stop()
-                
-                        time.sleep(1.0)
-
-                        tts_main.play(vc_back_p)
-                        while tts_main.is_playing():
-                            time.sleep(0.05)
-                        time.sleep(1.0)
-                        continue
-
-                    else:
-                        tts_main.stop()
-                        tts_summary.stop()
-                
-                        time.sleep(1.0)
-
-                        tts_main.play(vc_unknown_p)
-                        while tts_main.is_playing():
-                            time.sleep(0.05)
-                        time.sleep(1.0)
-
-                        continue
+                        else:
+                            print("Invalid option.")
+                            continue
 
         # Finished this sentence
         read_so_far.append(sentence)

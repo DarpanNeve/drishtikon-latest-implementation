@@ -11,9 +11,9 @@ from core.tts_player import tts_main    # use tts_main as unified prompt engine
 
 
 VALID_COMMANDS = {
-    "resume": ["resume", "continue", "start"],
-    "quit": ["quit", "exit", "end", "read", "detect", "stop"],
-    "summary": ["summary", "summarize", "summarise"],
+    "p": ["resume", "continue", "start"],
+    "q": ["quit", "exit", "end", "read", "detect", "stop"],
+    "m": ["summary", "summarize", "summarise"],
 }
 
 
