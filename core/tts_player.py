@@ -117,6 +117,16 @@ class TTSPlayer:
         self._stop_flag = False
 
 
+    # ------------------------------------------------------------
+    # Public API: wait
+    # ------------------------------------------------------------
+    def wait(self):
+        """
+        Blocking main thread
+        """
+        while self.is_playing():
+            time.sleep(0.05)
+
 # ================================================================
 # Three-player system (main, summary, prompt)
 # These can all be flushed before mode switches.
