@@ -143,30 +143,33 @@ def rag_query(question: str, store_name: str) -> str:
         )
         
         # --- ROBUST CITATION CHECK ---
-        citations = []
-        if (response.candidates and 
-            response.candidates[0].grounding_metadata and
-            response.candidates[0].grounding_metadata.grounding_chunks):
-            
-            for chunk in response.candidates[0].grounding_metadata.grounding_chunks:
-                uri = chunk.retrieved_context.uri
-                # Safely split the URI, handling cases where it might be None or empty
-                if uri:
-                    file_name = uri.split('/')[-1]
-                    citations.append(f" - Source: {file_name}")
-                else:
-                    citations.append(" - Source: [Unknown File]")
-            
-            citations_text = '\n'.join(citations)
-            
-            return (f"**Answer:** {response.text.strip()}\n\n"
-                    f"**Grounding Citations:**\n{citations_text}")
-        
-        # If no grounding metadata is found
-        return f"**Answer:** {response.text.strip()} (No specific grounding information found)."
+        citations_text = response.candidates[0].grounding_metadata.grounding_chunks
+        print(citations_text)
+        return (f"{response.text.strip()}\n\n")
 
     except Exception as e:
         return f"RAG Query Error: {e}"
+
+def rag_query_voice(question: str) -> str:
+    """
+    Handles RAG query specifically for voice control context.
+    It ensures the store exists before querying.
+    """
+    client = genai.Client()
+    
+    # 1. Get or Create the File Search Store
+    try:
+        store_name = _get_or_create_file_search_store(client)
+    except Exception as e:
+        return f"System error: Cannot initialize RAG store. Please check permissions."
+
+    if not store_name:
+        return "System error: Failed to retrieve store name."
+    
+    # 2. Run the actual RAG query
+    answer = rag_query(question, store_name)
+    return answer
+
 if __name__ == "__main__":
     # Example to test the rag_query function independently
     client = genai.Client()

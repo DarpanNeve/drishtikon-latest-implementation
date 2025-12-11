@@ -25,6 +25,7 @@ from core.logger import log
 from core.text_utils import split_into_sentences
 from core.summarize import summarize
 from core.query import answer_query
+from reading.rag import upload_text_to_store, rag_query, rag_query_voice
 
 # NEW CLEAN PROMPTS MODULE
 from core.prompts import *
@@ -268,7 +269,7 @@ def main():
         log("READING", img_path, f"{len(text)} chars", duration)
 
         # After OCR:
-        from reading.rag import upload_text_to_store, rag_query
+
         store_name = upload_text_to_store(text)
         if not store_name:
             print("\nCould not perform RAG query due to upload failure.")
@@ -358,7 +359,79 @@ def main():
                             print("[PATH]", sentence_audio)
                             tts_main.play(sentence_audio)
                             break
-                        
+
+                        elif choice == "x":
+                            tts_main.stop()
+                            tts_summary.stop()
+                            time.sleep(1.0)
+
+                            # Announce query mode
+                            tts_main.play(ask_query_intro_p)
+                            while tts_main.is_playing():
+                                time.sleep(0.05)
+
+                            # Listen for user's voice question
+                            question = listen_for_command(is_question=True)
+
+                            if question is None or not question.strip():
+                                # No question → back to voice control
+                                tts_main.play(vc_back_p)
+                                while tts_main.is_playing():
+                                    time.sleep(0.05)
+                                continue   # <── stays inside voice mode
+
+                            # Generate answer
+                            tts_main.stop()
+                            time.sleep(1.0)
+
+                            tts_main.play(generating_answer_p)
+                            while tts_main.is_playing():
+                                time.sleep(0.05)
+
+                            answer = answer_query(" ".join(read_so_far), question)
+
+                            print("\n========ANSWER=======\n")
+                            print(answer)
+
+                            if not answer.strip():
+                                tts_main.play(back_pause_menu_p)
+                                while tts_main.is_playing():
+                                    time.sleep(0.05)
+                                continue
+
+                            # Speak the answer
+                            answer_audio = speak(answer)
+
+                            tts_summary.stop()
+                            tts_main.stop()
+                            time.sleep(1.0)
+
+                            tts_summary.play(answer_audio)
+
+                            print("Press 's' to stop response")
+                            while True:
+                                if not tts_summary.is_playing():
+                                    break
+
+                                if sys.stdin in select.select([sys.stdin], [], [], 0)[0]:
+                                    if sys.stdin.readline().strip().lower() == "s":
+                                        tts_summary.stop()
+                                        tts_main.play(stopping_summary_p)
+                                        while tts_main.is_playing():
+                                            time.sleep(0.05)
+                                        break
+                            
+                            # Finished answer → back to voice mode
+                            tts_main.stop()
+                            tts_summary.stop()
+                            time.sleep(1.0)
+
+                            tts_main.play(back_pause_menu_p)
+                            while tts_main.is_playing():
+                                time.sleep(0.05)
+
+                            continue  # <── stay inside voice mode
+
                         # SUMMARY
                         elif choice == "m":
                             if not read_so_far:
@@ -444,7 +517,82 @@ def main():
                             print("[PATH]", sentence_audio)
                             tts_main.play(sentence_audio)
                             break
+                        # NEW RAG VOICE COMMAND
+                        elif choice == "r":
+                            tts_main.stop()
+                            tts_summary.stop()
+                            time.sleep(1.0)
 
+                            # Announce query mode (reusing existing prompt)
+                            tts_main.play(ask_query_intro_p)
+                            while tts_main.is_playing():
+                                time.sleep(0.05)
+
+                            # Listen for user's voice question
+                            # We assume the user's question is the full query
+                            question = listen_for_command(is_question=True)
+
+                            if question is None or not question.strip():
+                                # No question → back to voice mode
+                                tts_main.play(vc_back_p)
+                                while tts_main.is_playing():
+                                    time.sleep(0.05)
+                                continue   
+
+                            # Generate RAG answer
+                            tts_main.stop()
+                            time.sleep(1.0)
+
+                            tts_main.play(generating_answer_p)
+                            while tts_main.is_playing():
+                                time.sleep(0.05)
+                            
+                            # --- RAG CALL ---
+                            # Note: RAG uses the store uploaded during initialization, 
+                            # relying on the persistence logic in rag.py
+                            answer = rag_query_voice(question)
+                            print("\n========RAG ANSWER=======\n")
+                            print(answer)
+
+                            if not answer.strip() or answer.startswith("RAG Query Error"):
+                                tts_main.play(vc_back_p)
+                                while tts_main.is_playing():
+                                    time.sleep(0.05)
+                                continue
+
+                            # Speak the answer
+                            answer_audio = speak(answer)
+
+                            tts_summary.stop()
+                            tts_main.stop()
+                            time.sleep(1.0)
+
+                            tts_summary.play(answer_audio)
+
+                            print("Press 's' to stop response")
+                            while True:
+                                if not tts_summary.is_playing():
+                                    break
+
+                                if sys.stdin in select.select([sys.stdin], [], [], 0)[0]:
+                                    if sys.stdin.readline().strip().lower() == "s":
+                                        tts_summary.stop()
+                                        tts_main.play(stopping_summary_p)
+                                        while tts_main.is_playing():
+                                            time.sleep(0.05)
+                                        break
+                            
+                            # Finished answer → back to voice mode
+                            tts_main.stop()
+                            tts_summary.stop()
+                            time.sleep(1.0)
+
+                            tts_main.play(vc_back_p)
+                            while tts_main.is_playing():
+                                time.sleep(0.05)
+
+                            continue  # <── stay inside voice mode
+                        # ... (rest of elif choice == "v" block, like elif choice == "q", etc.)
                         # SUMMARY
                         elif choice == "m":
                             if not read_so_far:
