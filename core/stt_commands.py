@@ -7,7 +7,7 @@
 import time
 from core.stt import listen
 from core.prompts import vc_retry_p
-from core.tts_player import tts_main    # use tts_main as unified prompt engine
+from core.tts_player import tts_main
 
 
 VALID_COMMANDS = {
@@ -30,10 +30,10 @@ VALID_COMMANDS = {
 def normalize_command(text):
     """
     Turn raw STT text into canonical command:
-    Returns "resume", "quit", "summary", or None.
+    Returns "resume", "quit", "summary", "doubt", "search" or None.
     """
     if not text:
-        return None
+        return "p"
 
     text = text.lower().strip()
 
@@ -42,7 +42,6 @@ def normalize_command(text):
             if v in text:
                 return command
     return None
-
 
 def listen_for_command(max_attempts=2, is_question=False):
     """
