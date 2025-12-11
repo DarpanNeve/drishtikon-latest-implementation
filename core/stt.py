@@ -49,7 +49,7 @@ init_stt()
 # ================================================================
 #  AUDIO RECORDING (Raspberry Pi Safe)
 # ================================================================
-def record_audio(duration=4):
+def record_audio(duration=5):
     """
     Records audio using ALSA (sounddevice).
     Returns raw PCM bytes.
@@ -113,7 +113,7 @@ def speech_to_text(audio_bytes):
 # ================================================================
 #  PUBLIC LISTEN FUNCTION
 # ================================================================
-def listen(duration=4):
+def listen(duration=5):
     """
     High-level function:
     - Records audio

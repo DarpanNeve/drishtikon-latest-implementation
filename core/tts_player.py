@@ -123,4 +123,3 @@ class TTSPlayer:
 # ================================================================
 tts_main = TTSPlayer()
 tts_summary = TTSPlayer()
-tts_prompt = TTSPlayer()

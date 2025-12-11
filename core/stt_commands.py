@@ -12,19 +12,19 @@ from core.tts_player import tts_main    # use tts_main as unified prompt engine
 
 VALID_COMMANDS = {
     # Goal: Resume, Continue, Start
-    "p": ["resume", "continue", "start", "p", "pee", "v", "e", "pay", "play", "okay", "go", "read"],
+    "p": ["resume", "continue", "start", "pee", "pay", "play", "okay", "go", "read"],
     
     # Goal: Quit, Exit, Stop
-    "q": ["quit", "exit", "end", "detect", "stop", "quick", "q", "queue", "cool", "keel", "done", "cancel", "out"],
+    "q": ["quit", "exit", "end", "detect", "stop", "quick", "queue", "cool", "keel", "done", "cancel", "out"],
     
     # Goal: Summary, Summarize
-    "m": ["summary", "summarize", "summarise", "somebody", "m", "em", "them", "Sam", "me", "main", "menu"],
+    "m": ["summary", "summarize", "summarise", "somebody", "them", "Sam", "main", "menu"],
     
     # Goal: Query, Question, Ask
-    "x": ["query", "doubt", "question", "x", "ex", "axe", "ask", "text", "Lex", "acts", "next", "tax"],
+    "x": ["query", "doubt", "question", "axe", "ask", "text", "Lex", "acts", "next", "tax"],
     
     # Goal: Search, RAG, Look up, Find
-    "r": ["search", "rag", "look", "find", "track", "r", "are", "arg", "art", "hard", "dog", "rock", "read", "wreck", "ask"]
+    "r": ["search", "rag", "look", "find", "track", "are", "arg", "art", "hard", "dog", "rock", "read", "wreck", "ask"]
 }
 
 def normalize_command(text):

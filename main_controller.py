@@ -13,16 +13,7 @@ from core.stt import listen
 from core.logger import log
 from core.utils import absolute_path
 from core.tts_player import tts_main
-from core.prompts_main_controller import (
-    system_ready_p,
-    opening_reading_p,
-    opening_detection_p,
-    goodbye_p,
-    did_not_understand_p,
-    emergency_stop_p,
-    module_not_found_p,
-    launch_error_p
-)
+from core.prompts import *
 
 # ================================================================
 # PROCESS TRACKING
