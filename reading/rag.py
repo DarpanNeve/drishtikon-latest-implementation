@@ -70,7 +70,6 @@ def upload_text_to_store(text: str) -> str | None:
         # 1. Get or Create the File Search Store
         store_name = _get_or_create_file_search_store(client)
         if not store_name:
-            # Should not happen if _get_or_create raises errors correctly, but as a safeguard.
             return None 
 
         # 2. Create temporary file
@@ -114,18 +113,12 @@ def rag_query(question: str, store_name: str) -> str:
     """
     Runs a RAG query against the specified File Search store.
     """
-    client = genai.Client()
-
-    # --- CRITICAL FIX: Extract the simple ID for the tool configuration ---
-    # The tool configuration requires only the part after the slash.
-    
-    simple_store_name = store_name 
-    
-    tool_store_names = [simple_store_name]
+    client = genai.Client()    
+    tool_store_names = [store_name]
     # ---------------------------------------------------------------------
 
     try:
-        print(f"Querying store {store_name} using tool name: {simple_store_name} with question: '{question}'")
+        print(f"Querying store {store_name} using tool name: {store_name} with question: '{question}'")
         
         response = client.models.generate_content(
             model="gemini-2.5-flash",
@@ -134,7 +127,6 @@ def rag_query(question: str, store_name: str) -> str:
                 tools=[
                     types.Tool(
                         file_search=types.FileSearch(
-                            # Pass the corrected, simple name format
                             file_search_store_names=tool_store_names
                         )
                     )
