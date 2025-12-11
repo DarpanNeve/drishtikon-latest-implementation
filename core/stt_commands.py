@@ -11,13 +11,21 @@ from core.tts_player import tts_main    # use tts_main as unified prompt engine
 
 
 VALID_COMMANDS = {
-    "p": ["resume", "continue", "start", "p", "pee"],
-    "q": ["quit", "exit", "end", "read", "detect", "stop", "quick", "q"],
-    "m": ["summary", "summarize", "summarise", "somebody", "m", "em"],
-    "x": ["query", "doubt", "question", "x", "ex", "axe"],
-    "r": ["search", "rag", "look", "find", "track", "r", "are"]
+    # Goal: Resume, Continue, Start
+    "p": ["resume", "continue", "start", "p", "pee", "v", "e", "pay", "play", "okay", "go", "read"],
+    
+    # Goal: Quit, Exit, Stop
+    "q": ["quit", "exit", "end", "detect", "stop", "quick", "q", "queue", "cool", "keel", "done", "cancel", "out"],
+    
+    # Goal: Summary, Summarize
+    "m": ["summary", "summarize", "summarise", "somebody", "m", "em", "them", "Sam", "me", "main", "menu"],
+    
+    # Goal: Query, Question, Ask
+    "x": ["query", "doubt", "question", "x", "ex", "axe", "ask", "text", "Lex", "acts", "next", "tax"],
+    
+    # Goal: Search, RAG, Look up, Find
+    "r": ["search", "rag", "look", "find", "track", "r", "are", "arg", "art", "hard", "dog", "rock", "read", "wreck", "ask"]
 }
-
 
 def normalize_command(text):
     """
