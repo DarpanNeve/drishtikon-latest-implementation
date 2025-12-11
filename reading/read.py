@@ -264,12 +264,21 @@ def main():
         Do not add asterisks or other formatting.
         """
 
-        # text, duration = gemini_read(img_path, refinement_prompt)
-        # log("READING", img_path, f"{len(text)} chars", duration)
+        text, duration = gemini_read(img_path, refinement_prompt)
+        log("READING", img_path, f"{len(text)} chars", duration)
 
-        # print("\n===== OCR RESULT =====\n")
-        # print(text)
-        # print("\n=======================\n")
+        # After OCR:
+        from reading.rag import upload_text_to_store, rag_query
+        store_name = upload_text_to_store(text)
+        if not store_name:
+            print("\nCould not perform RAG query due to upload failure.")
+
+
+        print("\n===== OCR RESULT =====\n")
+        print(text)
+        print("\n=======================\n")
+
+
 
         # if not text.strip():
         #     tts_main.stop()
@@ -339,7 +348,6 @@ def main():
                         print(" m = summarize what has been read so far")
                         print(" q = quit reading module")
                         print(" x = ask a query")
-                        print(" r = RAG search")
                         sys.stdout.flush()
                         choice = sys.stdin.readline().strip().lower()
 
@@ -350,125 +358,7 @@ def main():
                             print("[PATH]", sentence_audio)
                             tts_main.play(sentence_audio)
                             break
-
-                        # =====================================================
-                        # (r) — RAG MODE (GLOBAL QUESTION ANSWERING)
-                        # =====================================================
-                        elif choice == "r":
-                            tts_main.stop()
-                            tts_summary.stop()
-
-                            # Ask for user query
-                            tts_main.play(ask_query_intro_p)
-                            while tts_main.is_playing():
-                                time.sleep(0.05)
-
-                            print("\nType your RAG question:")
-                            question = sys.stdin.readline().strip()
-
-                            if not question:
-                                tts_main.play(back_pause_menu_p)
-                                while tts_main.is_playing():
-                                    time.sleep(0.05)
-                                continue
-
-                            # ---------------------------------------------
-                            # 1. CREATE STORE (OR LOAD PREVIOUS)
-                            # ---------------------------------------------
-                            from google import genai
-                            from google.genai import types
-
-                            client = genai.Client()
-
-                            # You may want to cache this outside, but for now:
-                            file_search_store = client.file_search_stores.create(
-                                config={'display_name': 'reading-session-store'}
-                            )
-
-                            # ---------------------------------------------
-                            # 2. UPLOAD TEXT TO STORE
-                            #    (convert read_so_far to a temp .txt file)
-                            # ---------------------------------------------
-                            import tempfile
-
-                            with tempfile.NamedTemporaryFile(delete=False, suffix=".txt") as f:
-                                f.write(" ".join(read_so_far).encode("utf-8"))
-                                text_path = f.name
-
-                            # Upload + index
-                            tts_main.play(generating_answer_p)
-                            while tts_main.is_playing():
-                                time.sleep(0.05)
-
-                            op = client.file_search_stores.upload_to_file_search_store(
-                                file=text_path,
-                                file_search_store_name=file_search_store.name,
-                                config={
-                                    "display_name": "reading_context",
-                                    "chunking_config": {
-                                        "white_space_config": {
-                                            "max_tokens_per_chunk": 200,
-                                            "max_overlap_tokens": 20
-                                        }
-                                    }
-                                }
-                            )
-
-                            # Wait until indexing finishes
-                            while not op.done:
-                                time.sleep(2)
-                                op = client.operations.get(op)
-
-                            # ---------------------------------------------
-                            # 3. QUERY USING FILE SEARCH
-                            # ---------------------------------------------
-                            response = client.models.generate_content(
-                                model="gemini-2.5-flash",
-                                contents=question,
-                                config=types.GenerateContentConfig(
-                                    tools=[
-                                        types.Tool(
-                                            file_search=types.FileSearch(
-                                                file_search_store_names=[file_search_store.name]
-                                            )
-                                        )
-                                    ]
-                                )
-                            )
-
-                            answer = response.text or "Sorry, I could not find an answer."
-
-                            # ---------------------------------------------
-                            # 4. PLAY ANSWER
-                            # ---------------------------------------------
-                            print("\n======== RAG ANSWER ========\n")
-                            print(answer)
-
-                            answer_audio = speak(answer)
-
-                            tts_summary.stop()
-                            tts_summary.play(answer_audio)
-
-                            print("Answer mode — press 's' to stop")
-
-                            while True:
-                                if not tts_summary.is_playing():
-                                    break
-
-                                if sys.stdin in select.select([sys.stdin], [], [], 0)[0]:
-                                    if sys.stdin.readline().strip().lower() == "s":
-                                        tts_summary.stop()
-                                        tts_main.play(stopping_summary_p)
-                                        while tts_main.is_playing():
-                                            time.sleep(0.05)
-                                        break
-
-                            # Back to pause menu
-                            tts_main.play(back_pause_menu_p)
-                            while tts_main.is_playing():
-                                time.sleep(0.05)
-
-                            continue
+                        
                         # SUMMARY
                         elif choice == "m":
                             if not read_so_far:

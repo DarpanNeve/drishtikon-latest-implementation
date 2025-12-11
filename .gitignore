@@ -12,5 +12,5 @@ yolo/datasets/
 audio_files/
 annotated_images/
 results/
-test.*
+*test.*
 read_resurrect.py
