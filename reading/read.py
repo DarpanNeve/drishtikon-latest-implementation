@@ -25,6 +25,7 @@ from core.summarize import summarize
 from core.query import answer_query
 from core.prompts import *
 from core.state import *
+from core.playback_controls import pause, play
 from reading.rag import upload_text_to_store, rag_query, rag_query_voice
 load_dotenv()
 # ================================================================
@@ -119,10 +120,7 @@ def capture_image():
     # Try OpenCV camera first (legacy mode)
     cam = cv2.VideoCapture(0)
     if cam.isOpened():
-        prompt_path = speak("Press SPACE to capture, ESC to exit.")
-        if prompt_path:
-            tts_main.play(prompt_path)
-            tts_main.wait()
+        play(tts_main, cap_intro_p)
         while True:
             ret, frame = cam.read()
             if not ret:
@@ -141,11 +139,7 @@ def capture_image():
         cam.release()
         cv2.destroyAllWindows()
     # If OpenCV fails → fallback to libcamera
-    prompt_path = speak("Switching to Raspberry Pi camera mode.")
-    if prompt_path:
-        tts_main.stop()
-        tts_main.play(prompt_path)
-        tts_main.wait()
+    play(tts_main, switch_to_rasp_p)
     return capture_with_libcamera()
 # ================================================================
 # MAIN
@@ -159,9 +153,7 @@ def main():
     resume_mode = False
     if state:
         # Ask if want to continue the previous reading task
-        tts_main.stop()
-        tts_main.play(resume_previous_task_p)
-        tts_main.wait()
+        play(tts_main, resume_previous_task_p)
         print("\nPrevious reading task found.")
         print("Press 'y' to continue or any other key to start a new task.")
         choice = sys.stdin.readline().strip().lower()
@@ -180,25 +172,17 @@ def main():
     # ---------------------------------------------------------
     if not resume_mode:
         # INTRO
-        tts_main.stop()
-        tts_main.play(select_file_p)
-        tts_main.wait()
+        play(tts_main, select_file_p)
         # STEP 1 — Select file
         img_path = choose_file()
         if not img_path:
-            tts_main.stop()
-            tts_main.play(no_file_p)
-            tts_main.wait()
+            play(tts_main, no_file_p)
             img_path = capture_image()
         if not img_path:
-            tts_main.stop()
-            tts_main.play(no_image_exit_p)
-            tts_main.wait()
+            play(tts_main, no_image_exit_p)
             return
         # OCR PROMPT
-        tts_main.stop()
-        tts_main.play(processing_p)
-        tts_main.wait()
+        play(tts_main, processing_p)
         refinement_prompt = """
         This image was captured by a blind user.
         Extract the exact text from the book page.
@@ -215,17 +199,14 @@ def main():
         print(text)
         print("\n=======================\n")
         # if not text.strip():
-        #     tts_main.stop()
-        #     tts_main.play(empty_page_p)
-        #     tts_main.wait()
+        #     play(tts_main, empty_page_p)
         #     return
         # CHUNKING
         sentences = ['After walking for many hours along an intricate series of paths\nand grassy trails, the two travellers came upon a lush, green\nvalley.', 'On one side of the valley, the snow-capped Himalayas\noffered their protection, like weather-beaten soldiers guarding\nthe place where their generals rested.', 'On the other, a thick forest\nof pine trees sprouted, a perfectly natural tribute to this\nenchanting fantasyland.', 'The sage looked at Julian and smiled gently.', '"Welcome to the\nNirvana of Sivana.', '"\n\nThe two then descended along another less-travelled way and\ninto the thick forest that formed the floor of the valley.', 'The smell\nof pine and sandalwood wafted through the cool, crisp mountain\nair.', 'Julian, now barefoot to ease his aching feet, felt the damp moss\nunder his toes.', 'He was surprised to see richly colored orchids and\na host of other lovely flowers dancing among the trees, as if\nrejoicing in the beauty and splendor of this tiny slice of Heaven.', 'In the distance, Julian could hear gentle voices, soft and\nsoothing to the ear.', 'He continued to follow the sage without\nmaking a sound.', 'After walking for about fifteen more minutes, the\n24\n\nCHAPTER FOUR\n\nA Magical Meeting with\nthe Sages of Sivana\n\ntwo men reached a clearing.', 'Before him was a sight that even the\nworldly wise and rarely surprised Julian Mantle could never have\nimagined — a small village made solely out of what appeared to be\nroses.', 'At the center of the village was a tiny temple, the kind\nJulian had seen on his trips to Thailand and Nepal, but this temple\nwas made of red, white and pink flowers, held together with long\nstrands of multi-colored string and twigs.', 'The little huts that\ndotted the remaining space appeared to be the austere homes of\nthe sages.', 'These were also made of roses.', 'Julian was speechless.', 'As for the monks who inhabited the village, those he could see\nlooked like Julian’s travelling companion, who now revealed that\nhis name was Yogi Raman and the leader of this group.', 'The citizens of this\nsage of Sivana and the leader of this group.', 'The citizens of this\ndreamlike colony looked astonishingly youthful and moved with\npoise and purpose.', 'None of them spoke, choosing instead to\nrespect the tranquility of this place by performing their tasks in\nsilence.', 'The men, who appeared to number only about ten, wore the\nsame red-robed uniform as Yogi Raman and smiled serenely at\nJulian as he entered their village.', 'Each of them looked calm,\nhealthy and deeply contented.', 'It was as if the tensions that plague\nso many of us in our modern world had sensed that they were not\nwelcome at this summit of serenity and moved on to more inviting\nprospects.', 'Though it had been many years since there had been a\nnew face among them, these men were controlled in their\nreception, offering a simple bow as their greeting to this visitor\nwho had travelled so far to find them.', 'The women were equally impressive.', 'In their flowing pink silk\nsaris and with white lotusess adorning their jet black hair, they\nmoved busily through the village with exceptional agility.', '25\n\nThe Monk Who Sold His Ferrari']
         sentences = split_into_sentences(text)
         # print(sentences)
         if not sentences:
-            tts_main.play(no_sentences_p)
-            tts_main.wait()
+            play(tts_main, no_sentences_p)
             return
         read_so_far = []
         current_index = 0
@@ -258,9 +239,7 @@ def main():
             # (p) — PAUSE
             # =====================================================
                 if key == "p":
-                    tts_main.stop()
-                    tts_main.play(pause_beep)
-                    tts_main.wait()
+                    pause(tts_main, pause_beep)
                     # ----- PAUSE MENU -----
                     while True:
                         print("\nPaused. Options:")
@@ -272,8 +251,7 @@ def main():
                         choice = sys.stdin.readline().strip().lower()
                         # RESUME → restart sentence
                         if choice == "p":
-                            tts_main.play(resume_beep)
-                            tts_main.wait()
+                            play(tts_main, resume_beep)
                             sentence_audio = speak_cached(sentence_audio, audio_file_name)
                             print("[PATH]", sentence_audio)
                             tts_main.play(sentence_audio)
@@ -281,24 +259,20 @@ def main():
                         # QUERY RESOLUTION
                         elif choice == "x":
                             # Announce query mode
-                            tts_main.play(ask_query_intro_p)
-                            tts_main.wait()
+                            play(tts_main, ask_query_intro_p)
                             # Listen for user's voice question
                             question = listen_for_command(is_question=True)
                             if question is None or not question.strip():
                                 # No question → back to voice control
-                                tts_main.play(vc_back_p)
-                                tts_main.wait()
+                                play(tts_main, vc_back_p)
                                 continue   # <── stays inside voice mode
                             # Generate answer
-                            tts_main.play(generating_answer_p)
-                            tts_main.wait()
+                            play(tts_main, generating_answer_p)
                             answer = answer_query(" ".join(read_so_far), question)
                             print("\n========ANSWER=======\n")
                             print(answer)
                             if not answer.strip():
-                                tts_main.play(back_pause_menu_p)
-                                tts_main.wait()
+                                play(tts_main, back_pause_menu_p)
                                 continue
                             # Speak the answer
                             answer_audio = speak(answer)
@@ -309,28 +283,22 @@ def main():
                                     break
                                 if sys.stdin in select.select([sys.stdin], [], [], 0)[0]:
                                     if sys.stdin.readline().strip().lower() == "s":
-                                        tts_main.stop()
-                                        tts_main.play(stopping_summary_p)
-                                        tts_main.wait()
+                                        pause(tts_main, stopping_summary_p)
                                         break
                             # Finished answer → back to voice mode
-                            tts_main.play(back_pause_menu_p)
-                            tts_main.wait()
+                            play(tts_main, back_pause_menu_p)
                             continue  # <── stay inside voice mode
                         # SUMMARY
                         elif choice == "m":
                             if not read_so_far:
-                                tts_main.play(no_content_yet_p)
-                                tts_main.wait()
-                                tts_main.play(back_pause_menu_p)
-                                tts_main.wait()
+                                play(tts_main, no_content_yet_p)
+                                play(tts_main, back_pause_menu_p)
                                 continue
                             # Reuse cached summary if applicable
                             if last_summary_audio is not None and last_summary_index == current_index:
                                 summary_audio = last_summary_audio
                             else:
-                                tts_main.play(generating_summary_p)
-                                tts_main.wait()
+                                play(tts_main, generating_summary_p)
                                 summary_text = summarize(" ".join(read_so_far))
                                 summary_audio = speak(summary_text)
                                 print("\n========SUMMARY=======\n")
@@ -344,12 +312,9 @@ def main():
                                     break
                                 if sys.stdin in select.select([sys.stdin], [], [], 0)[0]:
                                     if sys.stdin.readline().strip().lower() == "s":
-                                        tts_main.stop()
-                                        tts_main.play(stopping_summary_p)
-                                        tts_main.wait()
+                                        pause(tts_main, stopping_summary_p)
                                         break
-                            tts_main.play(back_pause_menu_p)
-                            tts_main.wait()
+                            play(tts_main, back_pause_menu_p)
                             continue
                         # QUIT
                         elif choice == "q":
@@ -360,8 +325,7 @@ def main():
                                     "current_index": current_index,
                                 }
                                 save_state(task_state)
-                            tts_main.play(exiting_module_p)
-                            tts_main.wait()
+                            play(tts_main, exiting_module_p)
                             return
                         else:
                             print("Invalid option.")
@@ -370,17 +334,14 @@ def main():
             # (v) — VOICE MODE
             # =====================================================
                 elif key == "v":
-                    tts_main.play(pause_beep)
-                    tts_main.wait()
-                    tts_main.play(vc_intro_p)
-                    tts_main.wait()
+                    play(tts_main, pause_beep)
+                    play(tts_main, vc_intro_p)
                     # ----- PAUSE MENU -----
                     while True:
                         choice = listen_for_command()
                         # RESUME → restart sentence
                         if choice is None or choice == "p":
-                            tts_main.play(resume_beep)
-                            tts_main.wait()
+                            play(tts_main, resume_beep)
                             sentence_audio = speak_cached(sentence, audio_file_name)
                             print("[PATH]", sentence_audio)
                             tts_main.play(sentence_audio)
@@ -388,25 +349,21 @@ def main():
                         # RAG SEARCH
                         elif choice == "r":
                             # Announce rag mode
-                            tts_main.play(ask_query_intro_p)
-                            tts_main.wait()
+                            play(tts_main, ask_query_intro_p)
                             # Listen for user's voice question
                             question = listen_for_command(is_question=True)
                             if question is None or not question.strip():
                                 # No question → back to voice mode
-                                tts_main.play(vc_back_p)
-                                tts_main.wait()
+                                play(tts_main, vc_back_p)
                                 continue
                             # Generate RAG answer
-                            tts_main.play(generating_answer_p)
-                            tts_main.wait()
+                            play(tts_main, generating_answer_p)
                             # --- RAG CALL ---
                             answer = rag_query_voice(question)
                             print("\n========RAG ANSWER=======\n")
                             print(answer)
                             if not answer.strip() or answer.startswith("RAG Query Error"):
-                                tts_main.play(vc_back_p)
-                                tts_main.wait()
+                                play(tts_main, vc_back_p)
                                 continue
                             # Speak the answer
                             answer_audio = speak(answer)
@@ -417,26 +374,21 @@ def main():
                                     break
                                 if sys.stdin in select.select([sys.stdin], [], [], 0)[0]:
                                     if sys.stdin.readline().strip().lower() == "s":
-                                        tts_main.stop()
-                                        tts_main.play(stopping_summary_p)
-                                        tts_main.wait()    
+                                        pause(tts_main, stopping_summary_p)
                                         break
                             # Finished answer → back to voice mode
-                            tts_main.play(vc_back_p)
-                            tts_main.wait()
+                            play(tts_main, vc_back_p)
                             continue  # <── stay inside voice mode
                         # SUMMARY
                         elif choice == "m":
                             if not read_so_far:
-                                tts_main.play(no_content_yet_p)
-                                tts_main.wait()
+                                play(tts_main, no_content_yet_p)
                                 continue
                             # Reuse cached summary if applicable
                             if last_summary_audio is not None and last_summary_index == current_index:
                                 summary_audio = last_summary_audio
                             else:
-                                tts_main.play(generating_summary_p)
-                                tts_main.wait()
+                                play(tts_main, generating_summary_p)
                                 summary_text = summarize(" ".join(read_so_far))
                                 summary_audio = speak(summary_text)
                                 print("\n========SUMMARY=======\n")
@@ -450,34 +402,27 @@ def main():
                                     break
                                 if sys.stdin in select.select([sys.stdin], [], [], 0)[0]:
                                     if sys.stdin.readline().strip().lower() == "s":
-                                        tts_main.stop()
-                                        tts_main.play(stopping_summary_p)
-                                        tts_main.wait()
+                                        pause(tts_main, stopping_summary_p)
                                         break
-                            tts_main.play(back_pause_menu_p)
-                            tts_main.wait()
+                            play(tts_main, back_pause_menu_p)
                             continue
                         # QUERY RESOLUTION
                         elif choice == "x":
                             # Announce query mode
-                            tts_main.play(ask_query_intro_p)
-                            tts_main.wait()
+                            play(tts_main, ask_query_intro_p)
                             # Listen for user's voice question
                             question = listen_for_command(is_question=True)
                             if question is None or not question.strip():
                                 # No question → back to voice control
-                                tts_main.play(vc_back_p)
-                                tts_main.wait()
+                                play(tts_main, vc_back_p)
                                 continue   # <── stays inside voice mode
                             # Generate answer
-                            tts_main.play(generating_answer_p)
-                            tts_main.wait()
+                            play(tts_main, generating_answer_p)
                             answer = answer_query(" ".join(read_so_far), question)
                             print("\n========ANSWER=======\n")
                             print(answer)
                             if not answer.strip():
-                                tts_main.play(vc_back_p)
-                                tts_main.wait()
+                                play(tts_main, vc_back_p)
                                 continue
                             # Speak the answer
                             answer_audio = speak(answer)
@@ -488,13 +433,10 @@ def main():
                                     break
                                 if sys.stdin in select.select([sys.stdin], [], [], 0)[0]:
                                     if sys.stdin.readline().strip().lower() == "s":
-                                        tts_main.stop()
-                                        tts_main.play(stopping_summary_p)
-                                        tts_main.wait()
+                                        pause(tts_main, stopping_summary_p)
                                         break
                             # Finished answer → back to voice mode
-                            tts_main.play(vc_back_p)
-                            tts_main.wait()
+                            play(tts_main, vc_back_p)
                             continue  # <── stay inside voice mode
                         # QUIT
                         elif choice == "q":
@@ -505,8 +447,7 @@ def main():
                                     "current_index": current_index,
                                 }
                                 save_state(task_state)
-                            tts_main.play(exiting_module_p)
-                            tts_main.wait()
+                            play(tts_main, exiting_module_p)
                             return
                         else:
                             print("Invalid option.")
@@ -521,12 +462,7 @@ def main():
     # ALL SENTENCES COMPLETE
     # ---------------------------------------------------------
     clear_state()
-    tts_main.stop()
-    tts_main.stop()
-    time.sleep(1.0)
-    tts_main.play(all_done_p)
-    tts_main.wait()
-          
+    play(tts_main, all_done_p)
     print("\n===== COMPLETED ALL SENTENCES =====\n")
 # ================================================================
 if __name__ == "__main__":

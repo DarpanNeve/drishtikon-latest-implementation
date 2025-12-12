@@ -53,6 +53,19 @@ launch_error_p = speak_cached(
 )
 
 # ---------------------------
+# CAMERA PROMPTS
+# ---------------------------
+cap_intro_p = speak_cached(
+    "Press SPACE to capture, ESC to exit.", 
+    "capture_image_intro.wav"
+)
+
+switch_to_rasp_p = speak_cached(
+    "Switching to Raspberry Pi camera mode.", 
+    "switch_to_rasp.wav"
+)
+
+# ---------------------------
 # MAIN SYSTEM PROMPTS
 # ---------------------------
 resume_previous_task_p = speak_cached(
