@@ -14,6 +14,7 @@ from core.logger import log
 from core.utils import absolute_path
 from core.tts_player import tts_main
 from core.prompts import *
+from core.playback_controls import play
 
 # ================================================================
 # PROCESS TRACKING
@@ -58,19 +59,11 @@ def linux_stop_listener():
     while True:
         if os.path.exists("/tmp/stop.txt"):
             print("[STOP] Emergency stop signal detected via /tmp/stop.txt.")
-
-            tts_main.stop()
-            time.sleep(1.0)
-
-            tts_main.play(emergency_stop_p)
-            while tts_main.is_playing():
-                time.sleep(0.05)
-
+            time.sleep(1)
+            play(tts_main, emergency_stop_p)
             kill_all_processes()
             os._exit(0)
-
         time.sleep(1)
-
 
 # ================================================================
 # MODULE LAUNCHER
@@ -83,13 +76,7 @@ def start_process(relative_path):
     if not os.path.exists(target):
         print(f"[MAIN] Missing module: {relative_path}")
 
-        tts_main.stop()
-        time.sleep(1.0)
-
-        tts_main.play(module_not_found_p)
-        while tts_main.is_playing():
-            time.sleep(0.05)
-
+        play(tts_main, module_not_found_p)
         log("MAIN", relative_path, "Missing module")
         return
 
@@ -105,14 +92,7 @@ def start_process(relative_path):
 
     except Exception as e:
         log("MAIN", relative_path, f"Launch error: {e}")
-
-        tts_main.stop()
-        time.sleep(1.0)
-
-        tts_main.play(launch_error_p)
-        while tts_main.is_playing():
-            time.sleep(0.05)
-
+        play(tts_main, launch_error_p)
 
 # ================================================================
 # MAIN LOOP
@@ -123,9 +103,7 @@ def main():
     threading.Thread(target=linux_stop_listener, daemon=True).start()
 
     # Speak intro
-    tts_main.stop()
-    time.sleep(1.0)
-    tts_main.play(system_ready_p)
+    play(tts_main, system_ready_p)
 
     print("[MAIN] Awaiting commands...")
 
@@ -141,12 +119,7 @@ def main():
         # READING MODULE
         # -----------------------------
         if "read" in cmd:
-            tts_main.stop()
-            time.sleep(1.0)
-            tts_main.play(opening_reading_p)
-            while tts_main.is_playing():
-                time.sleep(0.05)
-
+            play(tts_main, opening_reading_p)
             log("MAIN", "-", "Launch reading")
             start_process("reading/read.py")
             continue
@@ -155,12 +128,7 @@ def main():
         # OBJECT DETECTION MODULE
         # -----------------------------
         if "detect" in cmd or "object" in cmd:
-            tts_main.stop()
-            time.sleep(1.0)
-            tts_main.play(opening_detection_p)
-            while tts_main.is_playing():
-                time.sleep(0.05)
-
+            play(tts_main, opening_detection_p)
             log("MAIN", "-", "Launch YOLO")
             start_process("yolo/detect.py")
             continue
@@ -169,26 +137,14 @@ def main():
         # EXIT SYSTEM
         # -----------------------------
         if "exit" in cmd or "quit" in cmd:
-            tts_main.stop()
-            time.sleep(1.0)
-
-            tts_main.play(goodbye_p)
-            while tts_main.is_playing():
-                time.sleep(0.05)
-
+            play(tts_main, goodbye_p)
             kill_all_processes()
             break
 
         # -----------------------------
         # UNKNOWN COMMAND
         # -----------------------------
-        tts_main.stop()
-        time.sleep(1.0)
-
-        tts_main.play(did_not_understand_p)
-        while tts_main.is_playing():
-            time.sleep(0.05)
-
+        play(tts_main, did_not_understand_p)
         log("MAIN", "-", f"Unknown command: {cmd}")
 
 

@@ -8,6 +8,7 @@ import time
 from core.stt import listen
 from core.prompts import vc_retry_p
 from core.tts_player import tts_main
+from core.playback_controls import play
 
 
 VALID_COMMANDS = {
@@ -70,14 +71,5 @@ def listen_for_command(max_attempts=2, is_question=False):
             return command
 
         if attempts < max_attempts:
-            # Play retry prompt
-            tts_main.stop()
-            time.sleep(1.0)
-
-            tts_main.play(vc_retry_p)
-            while tts_main.is_playing():
-                time.sleep(0.05)
-
-            time.sleep(1.0)
-
+            play(tts_main, vc_retry_p)
     return None
