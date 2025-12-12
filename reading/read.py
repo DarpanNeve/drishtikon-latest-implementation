@@ -18,14 +18,14 @@ if PROJECT_ROOT not in sys.path:
 from core.utils import absolute_path, ensure_dir, load_credential_path
 from core.tts import speak
 from core.stt_commands import listen_for_command
-from core.tts_player import tts_main, tts_summary
+from core.tts_player import tts_main
 from core.logger import log
 from core.text_utils import split_into_sentences
 from core.summarize import summarize
 from core.query import answer_query
 from core.prompts import *
 from core.state import *
-from core.playback_controls import pause, play
+from core.playback_controls import play
 from reading.rag import upload_text_to_store, rag_query, rag_query_voice
 load_dotenv()
 # ================================================================
@@ -239,7 +239,7 @@ def main():
             # (p) — PAUSE
             # =====================================================
                 if key == "p":
-                    pause(tts_main, pause_beep)
+                    play(tts_main, pause_beep)
                     # ----- PAUSE MENU -----
                     while True:
                         print("\nPaused. Options:")
@@ -283,7 +283,7 @@ def main():
                                     break
                                 if sys.stdin in select.select([sys.stdin], [], [], 0)[0]:
                                     if sys.stdin.readline().strip().lower() == "s":
-                                        pause(tts_main, stopping_summary_p)
+                                        play(tts_main, stopping_summary_p)
                                         break
                             # Finished answer → back to voice mode
                             play(tts_main, back_pause_menu_p)
@@ -312,7 +312,7 @@ def main():
                                     break
                                 if sys.stdin in select.select([sys.stdin], [], [], 0)[0]:
                                     if sys.stdin.readline().strip().lower() == "s":
-                                        pause(tts_main, stopping_summary_p)
+                                        play(tts_main, stopping_summary_p)
                                         break
                             play(tts_main, back_pause_menu_p)
                             continue
@@ -374,7 +374,7 @@ def main():
                                     break
                                 if sys.stdin in select.select([sys.stdin], [], [], 0)[0]:
                                     if sys.stdin.readline().strip().lower() == "s":
-                                        pause(tts_main, stopping_summary_p)
+                                        play(tts_main, stopping_summary_p)
                                         break
                             # Finished answer → back to voice mode
                             play(tts_main, vc_back_p)
@@ -402,7 +402,7 @@ def main():
                                     break
                                 if sys.stdin in select.select([sys.stdin], [], [], 0)[0]:
                                     if sys.stdin.readline().strip().lower() == "s":
-                                        pause(tts_main, stopping_summary_p)
+                                        play(tts_main, stopping_summary_p)
                                         break
                             play(tts_main, back_pause_menu_p)
                             continue
@@ -433,7 +433,7 @@ def main():
                                     break
                                 if sys.stdin in select.select([sys.stdin], [], [], 0)[0]:
                                     if sys.stdin.readline().strip().lower() == "s":
-                                        pause(tts_main, stopping_summary_p)
+                                        play(tts_main, stopping_summary_p)
                                         break
                             # Finished answer → back to voice mode
                             play(tts_main, vc_back_p)

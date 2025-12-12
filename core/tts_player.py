@@ -128,8 +128,6 @@ class TTSPlayer:
             time.sleep(0.05)
 
 # ================================================================
-# Three-player system (main, summary, prompt)
-# These can all be flushed before mode switches.
+# TTSPlayer instance
 # ================================================================
 tts_main = TTSPlayer()
-tts_summary = TTSPlayer()
