@@ -25,7 +25,7 @@ from core.summarize import summarize
 from core.query import answer_query
 from core.prompts import *
 from core.state import *
-from core.playback_controls import play
+from core.playback_controls import play, non_blocking_play
 from reading.rag import upload_text_to_store, rag_query, rag_query_voice
 load_dotenv()
 # ================================================================
@@ -276,15 +276,7 @@ def main():
                                 continue
                             # Speak the answer
                             answer_audio = speak(answer)
-                            tts_main.play(answer_audio)
-                            print("Press 's' to stop response")
-                            while True:
-                                if not tts_main.is_playing():
-                                    break
-                                if sys.stdin in select.select([sys.stdin], [], [], 0)[0]:
-                                    if sys.stdin.readline().strip().lower() == "s":
-                                        play(tts_main, stopping_summary_p)
-                                        break
+                            non_blocking_play(tts_main, answer_audio, "Press 's' to stop response", stopping_response_p)
                             # Finished answer → back to voice mode
                             play(tts_main, back_pause_menu_p)
                             continue  # <── stay inside voice mode
@@ -305,15 +297,7 @@ def main():
                                 print(summary_text)
                                 last_summary_audio = summary_audio
                                 last_summary_index = current_index
-                            tts_main.play(summary_audio)
-                            print("Summary mode — press 's' to stop")
-                            while True:
-                                if not tts_main.is_playing():
-                                    break
-                                if sys.stdin in select.select([sys.stdin], [], [], 0)[0]:
-                                    if sys.stdin.readline().strip().lower() == "s":
-                                        play(tts_main, stopping_summary_p)
-                                        break
+                            non_blocking_play(tts_main, summary_audio, "Press 's' to stop summary", stopping_summary_p)
                             play(tts_main, back_pause_menu_p)
                             continue
                         # QUIT
@@ -367,15 +351,7 @@ def main():
                                 continue
                             # Speak the answer
                             answer_audio = speak(answer)
-                            tts_main.play(answer_audio)
-                            print("Press 's' to stop response")
-                            while True:
-                                if not tts_main.is_playing():
-                                    break
-                                if sys.stdin in select.select([sys.stdin], [], [], 0)[0]:
-                                    if sys.stdin.readline().strip().lower() == "s":
-                                        play(tts_main, stopping_summary_p)
-                                        break
+                            non_blocking_play(tts_main, answer_audio, "Press 's' to stop response", stopping_response_p)
                             # Finished answer → back to voice mode
                             play(tts_main, vc_back_p)
                             continue  # <── stay inside voice mode
@@ -395,15 +371,7 @@ def main():
                                 print(summary_text)
                                 last_summary_audio = summary_audio
                                 last_summary_index = current_index
-                            tts_main.play(summary_audio)
-                            print("Summary mode — press 's' to stop")
-                            while True:
-                                if not tts_main.is_playing():
-                                    break
-                                if sys.stdin in select.select([sys.stdin], [], [], 0)[0]:
-                                    if sys.stdin.readline().strip().lower() == "s":
-                                        play(tts_main, stopping_summary_p)
-                                        break
+                            non_blocking_play(tts_main, summary_audio, "Press 's' to stop summary", stopping_summary_p)
                             play(tts_main, back_pause_menu_p)
                             continue
                         # QUERY RESOLUTION
@@ -426,15 +394,7 @@ def main():
                                 continue
                             # Speak the answer
                             answer_audio = speak(answer)
-                            tts_main.play(answer_audio)
-                            print("Press 's' to stop response")
-                            while True:
-                                if not tts_main.is_playing():
-                                    break
-                                if sys.stdin in select.select([sys.stdin], [], [], 0)[0]:
-                                    if sys.stdin.readline().strip().lower() == "s":
-                                        play(tts_main, stopping_summary_p)
-                                        break
+                            non_blocking_play(tts_main, answer_audio, "Press 's' to stop response", stopping_response_p)
                             # Finished answer → back to voice mode
                             play(tts_main, vc_back_p)
                             continue  # <── stay inside voice mode

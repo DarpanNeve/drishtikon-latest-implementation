@@ -132,6 +132,11 @@ generating_answer_p = speak_cached(
     "finding_answer.wav"
 )
 
+stopping_response_p = speak_cached(
+    "Stopping response",
+    "stopping_response.wav"
+)
+
 # ---------------------------
 # PAUSE MENU PROMPTS
 # ---------------------------
