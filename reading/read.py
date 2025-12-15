@@ -192,13 +192,14 @@ def main():
         # OCR PROMPT
         play(tts_main, processing_p)
         refinement_prompt = f"""
-        Task: Act as a better version of the Google Vision OCR.
-        If the image contains text (like from a book), include the complete, UNSUMMARIZED text content.
-        Summarize only contextual elements like book title, chapter, or page numbers separately from the quoted text. 
-        If the content is medical, issue a clear alarm.
-        If no text is found, say "NO TEXT FOUND" and SUMMARIZE the visual (25 WORDS ONLY).
-        Do NOT use headers, bullet points, or lists in your final response.
-        """ 
+        If the image contains:
+        A lot of text => SUMMARIZE contextual elements in 20 WORDS, then include the complete, UNSUMMARIZED text content.
+        Message text => CONVERT into book style narration.
+        Medical text => Issue alarms and include UNSUMMARIZED text.
+        Little text => SUMMARIZE contextual elements along with text in 25 WORDS.
+        No text => Say "NO TEXT FOUND." and SUMMARIZE the visual in 15 WORDS.
+        DO NOT include asterisks, quotes, or any formatting.
+        """
         text, duration = gemini_read(img_path, refinement_prompt)
         log("READING", img_path, f"{len(text)} chars", duration)
         # After OCR:
@@ -217,7 +218,7 @@ def main():
         # CHUNKING
         # sentences = ['After walking for many hours along an intricate series of paths\nand grassy trails, the two travellers came upon a lush, green\nvalley.', 'On one side of the valley, the snow-capped Himalayas\noffered their protection, like weather-beaten soldiers guarding\nthe place where their generals rested.', 'On the other, a thick forest\nof pine trees sprouted, a perfectly natural tribute to this\nenchanting fantasyland.', 'The sage looked at Julian and smiled gently.', '"Welcome to the\nNirvana of Sivana.', '"\n\nThe two then descended along another less-travelled way and\ninto the thick forest that formed the floor of the valley.', 'The smell\nof pine and sandalwood wafted through the cool, crisp mountain\nair.', 'Julian, now barefoot to ease his aching feet, felt the damp moss\nunder his toes.', 'He was surprised to see richly colored orchids and\na host of other lovely flowers dancing among the trees, as if\nrejoicing in the beauty and splendor of this tiny slice of Heaven.', 'In the distance, Julian could hear gentle voices, soft and\nsoothing to the ear.', 'He continued to follow the sage without\nmaking a sound.', 'After walking for about fifteen more minutes, the\n24\n\nCHAPTER FOUR\n\nA Magical Meeting with\nthe Sages of Sivana\n\ntwo men reached a clearing.', 'Before him was a sight that even the\nworldly wise and rarely surprised Julian Mantle could never have\nimagined — a small village made solely out of what appeared to be\nroses.', 'At the center of the village was a tiny temple, the kind\nJulian had seen on his trips to Thailand and Nepal, but this temple\nwas made of red, white and pink flowers, held together with long\nstrands of multi-colored string and twigs.', 'The little huts that\ndotted the remaining space appeared to be the austere homes of\nthe sages.', 'These were also made of roses.', 'Julian was speechless.', 'As for the monks who inhabited the village, those he could see\nlooked like Julian’s travelling companion, who now revealed that\nhis name was Yogi Raman and the leader of this group.', 'The citizens of this\nsage of Sivana and the leader of this group.', 'The citizens of this\ndreamlike colony looked astonishingly youthful and moved with\npoise and purpose.', 'None of them spoke, choosing instead to\nrespect the tranquility of this place by performing their tasks in\nsilence.', 'The men, who appeared to number only about ten, wore the\nsame red-robed uniform as Yogi Raman and smiled serenely at\nJulian as he entered their village.', 'Each of them looked calm,\nhealthy and deeply contented.', 'It was as if the tensions that plague\nso many of us in our modern world had sensed that they were not\nwelcome at this summit of serenity and moved on to more inviting\nprospects.', 'Though it had been many years since there had been a\nnew face among them, these men were controlled in their\nreception, offering a simple bow as their greeting to this visitor\nwho had travelled so far to find them.', 'The women were equally impressive.', 'In their flowing pink silk\nsaris and with white lotusess adorning their jet black hair, they\nmoved busily through the village with exceptional agility.', '25\n\nThe Monk Who Sold His Ferrari']
         sentences = split_into_sentences(text)
-        sentences.append("We have reached the end!")
+        sentences.append("THE END...")
         # print(sentences)
         if not sentences:
             play(tts_main, no_sentences_p)
