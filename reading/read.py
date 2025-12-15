@@ -187,12 +187,14 @@ def main():
             return
         # OCR PROMPT
         play(tts_main, processing_p)
-        refinement_prompt = """
-        This image was captured by a blind user.
-        Extract the exact text from the book page.
-        Do not paraphrase or modify anything.
-        Do not add asterisks or other formatting.
-        """
+        refinement_prompt = f"""
+        Task: Act as a better version of the Google Vision OCR.
+        If the image contains text (like from a book), include the complete, UNSUMMARIZED text content.
+        Summarize only contextual elements like book title, chapter, or page numbers separately from the quoted text. 
+        If the content is medical, issue a clear alarm.
+        If no text is found, say "NO TEXT FOUND" and SUMMARIZE the visual (25 WORDS ONLY).
+        Do NOT use headers, bullet points, or lists in your final response.
+        """ 
         text, duration = gemini_read(img_path, refinement_prompt)
         log("READING", img_path, f"{len(text)} chars", duration)
         # After OCR:

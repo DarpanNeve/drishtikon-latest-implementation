@@ -107,10 +107,15 @@ def main():
 
     print("[MAIN] Awaiting commands...")
 
+    no_response = 0
     while True:
-        cmd = listen()
-        if not cmd:
-            continue
+        if no_response >= 3:
+            cmd = "exit"
+        else:
+            cmd = listen()
+            if not cmd:
+                no_response += 1
+                continue
 
         cmd = cmd.lower().strip()
         print(f"[MAIN] Heard: {cmd}")
@@ -119,6 +124,7 @@ def main():
         # READING MODULE
         # -----------------------------
         if "read" in cmd:
+            no_response = 0
             play(tts_main, opening_reading_p)
             log("MAIN", "-", "Launch reading")
             start_process("reading/read.py")
@@ -128,6 +134,7 @@ def main():
         # OBJECT DETECTION MODULE
         # -----------------------------
         if "detect" in cmd or "object" in cmd:
+            no_response = 0
             play(tts_main, opening_detection_p)
             log("MAIN", "-", "Launch YOLO")
             start_process("yolo/detect.py")
@@ -137,6 +144,7 @@ def main():
         # EXIT SYSTEM
         # -----------------------------
         if "exit" in cmd or "quit" in cmd:
+            no_response = 0
             play(tts_main, goodbye_p)
             kill_all_processes()
             break
