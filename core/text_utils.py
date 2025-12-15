@@ -5,7 +5,7 @@
 # ================================================================
 import re
 from typing import List
-def split_into_sentences(text: str, min_len: int = 10, max_len: int = 50) -> List[str]:
+def split_into_sentences(text: str, min_len: int = 25, max_len: int = 75) -> List[str]:
     """
     Split text into 'forgiving' sentence chunks.
     Forgiving behavior:

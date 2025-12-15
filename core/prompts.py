@@ -165,7 +165,7 @@ back_pause_menu_p = speak_cached(
 # VOICE CONTROL PROMPTS
 # ---------------------------
 vc_intro_p = speak_cached(
-    "Voice control. Say summary, doubt, search, resume, or quit.",
+    "Voice control. Say summary, resume, doubt, search or quit.",
     "voice_intro.wav"
 )
 

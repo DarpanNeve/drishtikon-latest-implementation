@@ -111,7 +111,7 @@ class TTSPlayer:
             sd.stop()
 
             # Allow thread to terminate
-            self._thread.join(timeout=0.2)
+            self._thread.join(timeout=1.5)
 
         self._thread = None
         self._stop_flag = False
