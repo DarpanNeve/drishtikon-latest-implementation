@@ -16,16 +16,16 @@ VALID_COMMANDS = {
     "p": ["resume", "continue", "start", "pee", "pay", "play", "okay", "go", "read"],
     
     # Goal: Quit, Exit, Stop
-    "q": ["quit", "exit", "end", "detect", "stop", "quick", "queue", "cool", "keel", "done", "cancel", "out"],
+    "q": ["quit", "exit", "end", "detect", "stop", "quick", "queue", "done", "cancel", "out"],
     
     # Goal: Summary, Summarize
-    "m": ["summary", "summarize", "summarise", "somebody", "them", "Sam", "main", "menu"],
+    "m": ["summary", "summarize", "summarise", "somebody", 'summer'],
     
     # Goal: Query, Question, Ask
-    "x": ["query", "doubt", "question", "axe", "ask", "text", "Lex", "acts", "next", "tax"],
+    "x": ["query", "doubt", "question", "axe", "ask", "text", "next", "tax"],
     
     # Goal: Search, RAG, Look up, Find
-    "r": ["search", "rag", "look", "find", "track", "are", "arg", "art", "hard", "dog", "rock", "read", "wreck", "ask"]
+    "r": ["search", "surge", "rag", "look", "find", "track", "are", "arg", "art", "rock", "wreck"]
 }
 
 def normalize_command(text):
