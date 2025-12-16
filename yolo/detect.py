@@ -174,6 +174,7 @@ def main():
 
         # QUIT (Q)
         elif key == ord('q'):
+            play(tts_main, exiting_detection_module_p)
             break
 
     if cam: cam.release()

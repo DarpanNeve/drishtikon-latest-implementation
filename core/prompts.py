@@ -196,7 +196,7 @@ generating_rag_answer_p = speak_cached("Searching...", "generating_rag_answer.wa
 # ---------------------------
 exiting_detection_module_p = speak_cached(
     "Exiting detection module.",
-    "exiting_module.wav"
+    "exiting_detection_module.wav"
 )
 
 # ---------------------------
