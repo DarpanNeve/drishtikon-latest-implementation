@@ -14,3 +14,4 @@ annotated_images/
 results/
 *test/
 read_resurrect.py
+yolo/v2_detect.py
