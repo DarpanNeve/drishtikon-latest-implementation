@@ -192,6 +192,14 @@ enter_rag_mode_p = speak_cached("This is RAG search. Ask your query", "rag_intro
 generating_rag_answer_p = speak_cached("Searching...", "generating_rag_answer.wav")
 
 # ---------------------------
+# DETECT PROMPTS
+# ---------------------------
+exiting_detection_module_p = speak_cached(
+    "Exiting detection module.",
+    "exiting_module.wav"
+)
+
+# ---------------------------
 # BEEPS (non‑TTS files)
 # ---------------------------
 pause_beep = absolute_path("sounds", "pause_beep.wav")
