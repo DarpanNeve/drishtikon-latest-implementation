@@ -193,6 +193,7 @@ def main():
         play(tts_main, processing_p)
         refinement_prompt = f"""
         If the image contains:
+        Error screen or artifact => Explain error.
         A lot of text => SUMMARIZE contextual elements in 20 WORDS, then include the complete, UNSUMMARIZED text content.
         Message text => CONVERT into book style narration.
         Medical text => Issue alarms and include UNSUMMARIZED text.
