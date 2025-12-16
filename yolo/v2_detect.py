@@ -136,6 +136,7 @@ def choose_file():
 # MAIN
 # ================================================================
 def main():
+    first_pass = False
     ensure_results_dir()
     
     play(tts_main, select_file_p)
@@ -146,7 +147,8 @@ def main():
         play(tts_main, cap_intro_p)
         cam = cv2.VideoCapture(0)
     
-    last_yolo_time = time.time()
+    if not first_pass:
+        last_yolo_time = time.time()
     print("\n[CONTROLS]: Y: YOLO | G: Gemini | Q: Quit | S: Stop Speech\n")
     
     while True:
@@ -155,7 +157,6 @@ def main():
             ret, frame = cam.read()
             if ret:
                 cv2.imshow("Detection Feed", frame)
-                ts = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
                 current_img = absolute_path("results", "yolo_outputs", f"live.jpg")
                 cv2.imwrite(current_img, frame)
             else:
@@ -166,7 +167,14 @@ def main():
             cv2.imshow("Detection Feed", frame)
 
         key = cv2.waitKey(1) & 0xFF
-        
+        if not first_pass:
+            if not gemini_active and not tts_main.is_playing():
+                print("[AUTO-YOLO] Triggering routine scan...")
+                desc = run_yolo(current_img)
+                audio = speak(desc)
+                tts_main.play(audio)
+                last_yolo_time = time.time()
+            first_pass = True
         # 1. AUTO-YOLO (Every 10 seconds)
         # Does not run if Gemini is currently active
         if time.time() - last_yolo_time > 10:
