@@ -204,3 +204,8 @@ exiting_detection_module_p = speak_cached(
 # ---------------------------
 pause_beep = absolute_path("sounds", "pause_beep.wav")
 resume_beep = absolute_path("sounds", "resume_beep.wav")
+
+# ---------------------------
+# FILLER MUSIC
+# ---------------------------
+filler_music = absolute_path("test", "reading", "occlusion.wav")

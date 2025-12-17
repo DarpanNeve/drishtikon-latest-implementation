@@ -191,6 +191,7 @@ def main():
             return
         # OCR PROMPT
         play(tts_main, processing_p)
+        tts_main.play(filler_music)
         refinement_prompt = f"""
         If the image contains:
         Error screen or artifact => Explain error.
