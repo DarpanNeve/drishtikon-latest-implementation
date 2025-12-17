@@ -52,7 +52,7 @@ init_tts()
 # - Generate once → store WAV → reuse always
 # - Prevents Pi underruns because final output is LINEAR16
 # ================================================================
-def speak_cached(text: str, filename: str):
+def speak_cached(text: str, filename: str, is_detection: bool=False):
     """
     Generate TTS audio for a prompt ONCE, store as WAV, and reuse thereafter.
     Ensures Pi-safe audio playback with no MP3 decoding.
@@ -64,7 +64,7 @@ def speak_cached(text: str, filename: str):
         return cached_wav
 
     # Generate speech
-    generated_path = speak(text)
+    generated_path = speak(text, is_detection)
 
     if not generated_path or not os.path.exists(generated_path):
         print("[speak_cached] ERROR: speak() returned no audio.")
@@ -88,7 +88,7 @@ def speak_cached(text: str, filename: str):
 # - No playback logic inside
 # - Returns path for TTSPlayer
 # ================================================================
-def speak(text: str):
+def speak(text: str, is_detection: bool=False):
     """
     Convert text → speech using Google Cloud TTS.
     Returns the path to the generated WAV.
@@ -124,7 +124,10 @@ def speak(text: str):
 
     # Output filename
     ts = datetime.datetime.now().strftime("%Y%m%d_%H%M%S_%f")
-    audio_path = absolute_path("results", "audio_outputs", f"tts_{ts}.wav")
+    if is_detection:
+        audio_path = absolute_path("results", "audio_outputs", f"tts.wav")
+    else:
+        audio_path = absolute_path("results", "audio_outputs", f"tts_{ts}.wav")
 
     # Save WAV bytes
     try:

@@ -126,7 +126,7 @@ def gemini_summary_task(image_path):
         ])
         
         text = getattr(response, "text", "Unable to describe scene.")
-        audio_path = speak(text)
+        audio_path = speak(text, is_detection=True)
         non_blocking_play(tts_main, audio_path, "Press 's' to stop", stopping_summary_p)
         
     finally:
@@ -165,7 +165,7 @@ def main():
             if not gemini_active and not tts_main.is_playing():
                 desc = run_smart_yolo(frame)
                 if desc:
-                    tts_main.play(speak(desc))
+                    tts_main.play(speak(desc, is_detection=True))
                 last_yolo_time = time.time()
 
         # MANUAL GEMINI (G)
