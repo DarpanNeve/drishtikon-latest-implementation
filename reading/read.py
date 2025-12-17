@@ -261,6 +261,7 @@ def main():
         # =====================================================
             if key == "p":
                 play(tts_main, pause_beep)
+                tts_main.play(filler_music)
                 # ----- PAUSE MENU -----
                 while True:
                     print("\nPaused. Options:")
