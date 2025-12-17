@@ -9,13 +9,14 @@ import os
 import pickle
 from core.utils import absolute_path, ensure_dir
 
-# Directory for internal persistence
+# Directories for internal persistence
 STATE_DIR = absolute_path("results", "state")
 ensure_dir(STATE_DIR)
+SENTENCE_CACHE_DIR = absolute_path("results", "prompt_cache", "sentences")
+ensure_dir(SENTENCE_CACHE_DIR)
 
 # Single state file for reading module
 STATE_FILE = os.path.join(STATE_DIR, "reading_state.pkl")
-
 
 # ------------------------------------------------------------
 # Save state to disk
@@ -62,6 +63,12 @@ def load_state():
 # ------------------------------------------------------------
 def clear_state():
     """Remove saved reading progress."""
+    ensure_dir(SENTENCE_CACHE_DIR)
+    try:
+        for file in os.listdir(SENTENCE_CACHE_DIR):
+            os.remove(absolute_path(SENTENCE_CACHE_DIR, file))
+    except:
+            print("[SENTENCE CACHE] ERROR: Could not delete sentence cache.")
     if os.path.exists(STATE_FILE):
         try:
             os.remove(STATE_FILE)

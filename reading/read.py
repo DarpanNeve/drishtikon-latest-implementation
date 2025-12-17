@@ -173,8 +173,6 @@ def main():
             print("[STATE] Discarding saved task...")
             clear_state()
             resume_mode = False
-            for file in os.listdir(SENTENCE_CACHE_DIR):
-                os.remove(absolute_path(SENTENCE_CACHE_DIR, file))
     # ---------------------------------------------------------
     # NEW TASK FLOW (file select + OCR + chunking)
     # ---------------------------------------------------------
