@@ -209,3 +209,4 @@ resume_beep = absolute_path("sounds", "resume_beep.wav")
 # FILLER MUSIC
 # ---------------------------
 filler_music = absolute_path("test", "reading", "occlusion.wav")
+filler_music_summary = absolute_path("test", "reading", "grants_new_etude.wav")

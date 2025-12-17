@@ -5,6 +5,8 @@ from dotenv import load_dotenv
 import google.generativeai as genai
 from core.tts import speak
 from core.logger import log
+from core.tts_player import tts_main
+from core.prompts import filler_music_summary
 
 # Ensure project root is in sys.path
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
@@ -39,7 +41,8 @@ def summarize(text: str) -> str:
 
     if not text or len(text.strip()) == 0:
         return "No text provided."
-
+    
+    tts_main.play(filler_music_summary)
     prompt = f"""
     You are an AI summarizer. Summarize the following text clearly and concisely
     without changing the meaning ({int(len(text) / 4)} words max):

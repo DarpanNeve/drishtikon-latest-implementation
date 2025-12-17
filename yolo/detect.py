@@ -29,7 +29,7 @@ load_dotenv()
 # ================================================================
 #  CONFIG & CONSTANTS (New Features)
 # ================================================================
-FOCAL_LENGTH = 600  # Calibration constant for distance
+FOCAL_LENGTH = 80  # Calibration constant for distance
 DISTANCE_THRESHOLD = 0.8 # Meters of movement before re-announcing
 KNOWN_HEIGHTS = {
     "person": 1.7, "car": 1.5, "bus": 3.0, "truck": 3.0,
@@ -58,7 +58,7 @@ yolo_model = YOLO("yolov8n.pt")
 def estimate_distance(label, box_height):
     real_height = KNOWN_HEIGHTS.get(label, 1.5) # Default 1.5m
     if box_height <= 0: return None
-    return round((real_height * FOCAL_LENGTH) / box_height, 1)
+    return round((real_height * FOCAL_LENGTH) / box_height, 2)
 
 def get_position(x_center, frame_width):
     ratio = x_center / frame_width

@@ -13,4 +13,4 @@ audio_files/
 annotated_images/
 results/
 *test/
-read_resurrect.py
+yolov8n.pt

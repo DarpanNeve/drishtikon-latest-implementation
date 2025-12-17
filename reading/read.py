@@ -300,6 +300,7 @@ def main():
                         non_blocking_play(tts_main, answer_audio, "Press 's' to stop response", stopping_response_p)
                         # Finished answer → back to voice mode
                         play(tts_main, back_pause_menu_p)
+                        tts_main.play(filler_music_summary)
                         continue  # <── stay inside voice mode
                     # SUMMARY
                     elif choice == "m":
@@ -320,6 +321,7 @@ def main():
                             last_summary_index = current_index
                         non_blocking_play(tts_main, summary_audio, "Press 's' to stop summary", stopping_summary_p)
                         play(tts_main, back_pause_menu_p)
+                        tts_main.play(filler_music_summary)
                         continue
                     # QUIT
                     elif choice == "q":
