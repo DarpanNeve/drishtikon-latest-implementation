@@ -446,11 +446,18 @@ def main():
                 play(tts_main, pause_beep)
                 continue
         # =====================================================
-        # (l) -> PREVIOUS SENTENCE
+        # (l) -> PREVIOUS CHUNK
         # =====================================================
             elif key == "l" and (1 < current_index < len(sentences)):
                 play(tts_main, pause_beep)
                 current_index -= 2
+                continue
+        # =====================================================
+        # (r) -> REPLAY CHUNK
+        # =====================================================
+            elif key == "r" and (0 < current_index < len(sentences)):
+                play(tts_main, pause_beep)
+                current_index -= 1
                 continue
         # Finished this sentence
         read_so_far.append(sentence)
