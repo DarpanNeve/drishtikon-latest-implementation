@@ -439,6 +439,19 @@ def main():
                     else:
                         print("Invalid option.")
                         continue
+        # =====================================================
+        # (n) -> NEXT SENTENCE
+        # =====================================================
+            elif key == "n" and current_index < len(sentences) - 1:
+                play(tts_main, pause_beep)
+                continue
+        # =====================================================
+        # (l) -> PREVIOUS SENTENCE
+        # =====================================================
+            elif key == "l" and (1 < current_index < len(sentences)):
+                play(tts_main, pause_beep)
+                current_index -= 2
+                continue
         # Finished this sentence
         read_so_far.append(sentence)
         current_index += 1
