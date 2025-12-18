@@ -19,3 +19,11 @@ PROMPT_CACHE_DIR = absolute_path("results", "prompt_cache")
 # MICROPHONE SETTINGS (Google recommended)
 SAMPLE_RATE = 16000
 CHANNELS = 1
+
+# reading.read
+RESULTS_DIR = absolute_path("results")
+READING_INPUTS_DIR = absolute_path("results", "reading_inputs")
+
+# reading.rag
+# We use a constant display name for persistence across runs.
+STORE_DISPLAY_NAME = "reading-store-display"

@@ -11,10 +11,13 @@ from PIL import Image
 import io
 from dotenv import load_dotenv
 import google.generativeai as genai
+
 # Ensure project root is in sys.path
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
+    
+from core.constants import RESULTS_DIR, AUDIO_DIR, PROMPT_CACHE_DIR, READING_INPUTS_DIR, SENTENCE_CACHE_DIR, SUMMARY_CACHE_DIR
 from core.utils import absolute_path, ensure_dir, load_credential_path
 from core.tts import speak
 from core.stt_commands import listen_for_command
@@ -29,27 +32,31 @@ from core.playback_controls import play, non_blocking_play, read_key_nonblocking
 from reading.rag import upload_text_to_store, rag_query_voice
 load_dotenv()
 # ================================================================
-#  CREDENTIALS
+#  GOOGLE CREDENTIALS
 # ================================================================
 CRED_PATH = load_credential_path("reading", "reading-key.json")
+
+# ================================================================
+# GEMINI CONFIG
+# ================================================================
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 GEMINI_MODEL = os.getenv("GEMINI_MODEL")
-if GEMINI_API_KEY:
-    genai.configure(api_key=GEMINI_API_KEY)
+
+if not GEMINI_API_KEY:
+    raise ValueError("Gemini API key missing. Set GEMINI_API_KEY in .env")
+
+genai.configure(api_key=GEMINI_API_KEY)
 # ================================================================
 # HELPERS
 # ================================================================
 def ensure_results_dir():
-    ensure_dir(absolute_path("results"))
-    ensure_dir(absolute_path("results", "reading_outputs"))
-    ensure_dir(absolute_path("results", "prompt_cache"))
-    ensure_dir(absolute_path("results", "prompt_cache", "sentences"))
-    ensure_dir(absolute_path("results", "prompt_cache", "summaries"))
+    ensure_dir(RESULTS_DIR)
+    ensure_dir(READING_INPUTS_DIR)
+    ensure_dir(AUDIO_DIR)
+    ensure_dir(PROMPT_CACHE_DIR)
+    ensure_dir(SENTENCE_CACHE_DIR)
+    ensure_dir(SUMMARY_CACHE_DIR)
 
-PROMPT_CACHE_DIR = absolute_path("results", "prompt_cache")
-AUDIO_OUTPUT_DIR = absolute_path("results", "audio_outputs")
-SENTENCE_CACHE_DIR = absolute_path("results", "prompt_cache", "sentences")
-SUMMARY_CACHE_DIR = absolute_path("results", "prompt_cache", "summaries")
 # ================================================================
 # IMAGE OPTIMIZATION
 # ================================================================
@@ -75,7 +82,6 @@ def gemini_read(image_path, prompt):
         return "Gemini not configured.", 0
     optimized_bytes = optimize_image(image_path)
     model = genai.GenerativeModel(GEMINI_MODEL)
-    final_text = []
     start = time.time()
     response = model.generate_content(
         [
@@ -106,21 +112,26 @@ def choose_file():
     # Save copy to results
     img = cv2.imread(fp)
     ts = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-    save_path = absolute_path("results", "reading_outputs", f"capture_{ts}.jpg")
+    save_path = absolute_path("results", "reading_inputs", f"capture_{ts}.jpg")
     cv2.imwrite(save_path, img)
     return save_path
+
 # ================================================================
 # CAMERA CAPTURE - Raspberry Pi compatible
 # ================================================================
 def capture_with_libcamera():
     ts = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-    out_path = absolute_path("results", "reading_outputs", f"capture_{ts}.jpg")
+    out_path = absolute_path("results", "reading_inputs", f"capture_{ts}.jpg")
     cmd = ["libcamera-still", "-o", out_path, "--immediate", "--timeout", "1"]
     try:
         subprocess.run(cmd, check=True)
         return out_path
     except Exception:
         return None
+
+# ================================================================
+# CAMERA CAPTURE
+# ================================================================
 def capture_image():
     # Try OpenCV camera first (legacy mode)
     cam = cv2.VideoCapture(0)
@@ -134,7 +145,7 @@ def capture_image():
             key = cv2.waitKey(1)
             if key == 32:  # SPACE
                 ts = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-                path = absolute_path("results", "reading_outputs", f"capture_{ts}.jpg")
+                path = absolute_path("results", "reading_inputs", f"capture_{ts}.jpg")
                 cv2.imwrite(path, frame)
                 cam.release()
                 cv2.destroyAllWindows()
@@ -146,14 +157,20 @@ def capture_image():
     # If OpenCV fails → fallback to libcamera
     play(tts_main, switch_to_rasp_p)
     return capture_with_libcamera()
+
+# ================================================================
+# CLEAR AUDIO DIRECTORY
+# ================================================================
+def clear_audio_dir():
+    for file in os.listdir(AUDIO_DIR):
+        os.remove(absolute_path(AUDIO_DIR, file))
+        
 # ================================================================
 # MAIN
 # ================================================================
 def main():
     ensure_results_dir()
-
-    for file in os.listdir(AUDIO_OUTPUT_DIR):
-        os.remove(absolute_path(AUDIO_OUTPUT_DIR, file))
+    clear_audio_dir()
     # ---------------------------------------------------------
     # CHECK FOR EXISTING READING STATE (resume_mode)
     # ---------------------------------------------------------
@@ -173,7 +190,6 @@ def main():
             resume_mode = True
         else:
             print("[STATE] Discarding saved task...")
-            clear_state()
             resume_mode = False
     # ---------------------------------------------------------
     # NEW TASK FLOW (file select + OCR + chunking)

@@ -1,6 +1,7 @@
 # reading/rag.py
 import time
 import os
+import sys
 import tempfile
 import uuid
 from google import genai 
@@ -8,11 +9,15 @@ from google.genai import types
 from google.genai.errors import ClientError
 from dotenv import load_dotenv
 
-# Load environment variables
-load_dotenv()
+# Ensure project root is in sys.path
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+if PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, PROJECT_ROOT)
 
-# We use a constant display name for persistence across runs.
-STORE_DISPLAY_NAME = "reading-store-display" 
+from core.constants import STORE_DISPLAY_NAME
+
+# Load environment variables
+load_dotenv() 
 
 def _get_or_create_file_search_store(client: genai.Client) -> str:
     """
