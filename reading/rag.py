@@ -135,7 +135,7 @@ def rag_query(question: str, store_name: str) -> str:
         
         # --- ROBUST CITATION CHECK ---
         citations_text = response.candidates[0].grounding_metadata.grounding_chunks
-        print(citations_text)
+        # print(citations_text)
         return (f"{response.text.strip()}\n\n")
 
     except Exception as e:

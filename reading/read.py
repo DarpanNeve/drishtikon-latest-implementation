@@ -20,6 +20,8 @@ from core.stt_commands import listen_for_command
 from core.tts_player import tts_main
 from core.logger import log
 from core.text_utils import split_into_sentences
+from core.llm_task import LLMTask
+from core.llm_runner import run_llm_task
 from core.summarize import summarize
 from core.query import answer_query
 from core.prompts import *
@@ -217,14 +219,28 @@ def main():
         No text => Say "NO TEXT FOUND." and SUMMARIZE the visual in 15 WORDS.
         DO NOT include asterisks, quotes, or any formatting.
         """
-        text, duration = gemini_read(img_path, refinement_prompt)
-        log("READING", img_path, f"{len(text)} chars", duration)
+        
+        task = LLMTask(
+            gemini_read,
+            img_path,
+            refinement_prompt
+        )
+
+        result = run_llm_task(task)
+        text = None
+        duration = None
+        if result:
+            text, duration = result
+            log("READING", img_path, f"{len(text)} chars", duration)
+        else:
+            main()
         # After OCR:
         def helper_upload_text_to_store(text):
             store_name = upload_text_to_store(text)
             if not store_name:
                 print("\nCould not perform RAG query due to upload failure.")
-
+        if not text:
+            return
         threading.Thread(target=helper_upload_text_to_store, args=(text, ), daemon=True).start()
         print("\n===== OCR RESULT =====\n")
         print(text)
@@ -302,10 +318,17 @@ def main():
                             continue   # <── stays inside voice mode
                         # Generate answer
                         play(tts_main, generating_answer_p)
-                        answer = answer_query(" ".join(read_so_far), question)
+                        task = LLMTask(
+                            answer_query,
+                            " ".join(read_so_far),
+                            question
+                        )
+                        answer = run_llm_task(task)
+
                         print("\n========ANSWER=======\n")
                         print(answer)
-                        if not answer.strip():
+
+                        if not answer or not answer.strip():
                             play(tts_main, back_pause_menu_p)
                             continue
                         # Speak the answer
@@ -323,12 +346,20 @@ def main():
                             continue
                         play(tts_main, generating_summary_p)
                         summary_audio_file_name = f"summary_0{current_index}.wav" if current_index < 10 else f"summary_{current_index}.wav"
-                        summary_text = None
+                        summary_text = "Cached"
+
                         if not os.path.exists(absolute_path(SUMMARY_CACHE_DIR, summary_audio_file_name)):
-                            summary_text = summarize(" ".join(read_so_far))
-                        summary_audio = speak_cached(summary_text, absolute_path(SUMMARY_CACHE_DIR, summary_audio_file_name))
+                            task = LLMTask(summarize, " ".join(read_so_far))
+                            summary_text = run_llm_task(task)
+
                         print("\n========SUMMARY=======\n")
                         print(summary_text)
+                        if not summary_text or not summary_text.strip():
+                            play(tts_main, vc_back_p)
+                            # time.sleep(1)
+                            continue
+
+                        summary_audio = speak_cached(summary_text, absolute_path(SUMMARY_CACHE_DIR, summary_audio_file_name))
                         non_blocking_play(tts_main, summary_audio, "Press 's' to stop summary", stopping_summary_p)
                         play(tts_main, back_pause_menu_p)
                         tts_main.play(filler_music)
@@ -377,10 +408,16 @@ def main():
                         # Generate RAG answer
                         play(tts_main, generating_answer_p)
                         # --- RAG CALL ---
-                        answer = rag_query_voice(question)
+                        task = LLMTask(
+                            rag_query_voice,
+                            question
+                        )
+
+                        answer = run_llm_task(task)
                         print("\n========RAG ANSWER=======\n")
                         print(answer)
-                        if not answer.strip() or answer.startswith("RAG Query Error"):
+
+                        if not answer or not answer.strip() or answer.startswith("RAG Query Error"):
                             play(tts_main, vc_back_p)
                             # time.sleep(1)
                             continue
@@ -398,12 +435,13 @@ def main():
                             continue
                         play(tts_main, generating_summary_p)
                         summary_audio_file_name = f"summary_0{current_index}.wav" if current_index < 10 else f"summary_{current_index}.wav"
-                        summary_text = None
-                        if not os.path.exists(absolute_path(SUMMARY_CACHE_DIR, summary_audio_file_name)):
-                            summary_text = summarize(" ".join(read_so_far))
+                        summary_text = "Cached"
+                        if not summary_text or not summary_text.strip():
+                            play(tts_main, vc_back_p)
+                            # time.sleep(1)
+                            continue
+
                         summary_audio = speak_cached(summary_text, absolute_path(SUMMARY_CACHE_DIR, summary_audio_file_name))
-                        print("\n========SUMMARY=======\n")
-                        print(summary_text)
                         non_blocking_play(tts_main, summary_audio, "Press 's' to stop summary", stopping_summary_p)
                         play(tts_main, back_pause_menu_p)
                         continue
@@ -418,12 +456,20 @@ def main():
                             play(tts_main, vc_back_p)
                             # time.sleep(1)
                             continue   # <── stays inside voice mode
+
                         # Generate answer
                         play(tts_main, generating_answer_p)
-                        answer = answer_query(" ".join(read_so_far), question)
+                        task = LLMTask(
+                            answer_query,
+                            " ".join(read_so_far),
+                            question
+                        )
+                        answer = run_llm_task(task)
+
                         print("\n========ANSWER=======\n")
                         print(answer)
-                        if not answer.strip():
+
+                        if not answer or not answer.strip():
                             play(tts_main, vc_back_p)
                             # time.sleep(1)
                             continue
