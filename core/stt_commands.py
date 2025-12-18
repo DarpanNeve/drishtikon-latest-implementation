@@ -3,13 +3,10 @@
 # STT COMMAND NORMALIZATION + RETRY LOGIC
 # Cleaned to match new architecture (no speak_blocking, no tts_prompt)
 # ================================================================
-
-import time
 from core.stt import listen
 from core.prompts import vc_retry_p
 from core.tts_player import tts_main
 from core.playback_controls import play
-
 
 VALID_COMMANDS = {
     # Goal: Resume, Continue, Start

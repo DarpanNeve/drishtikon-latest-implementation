@@ -14,14 +14,13 @@ import soundfile as sf
 from google.cloud import texttospeech
 from google.oauth2 import service_account
 
+from core.constants import AUDIO_DIR, PROMPT_CACHE_DIR
 from core.utils import absolute_path, ensure_dir, load_credential_path
 from core.logger import log
 
 # ================================================================
 # DIRECTORIES
 # ================================================================
-AUDIO_DIR = absolute_path("results", "audio_outputs")
-PROMPT_CACHE_DIR = absolute_path("results", "prompt_cache")
 
 ensure_dir(AUDIO_DIR)
 ensure_dir(PROMPT_CACHE_DIR)
@@ -45,7 +44,6 @@ def init_tts():
 
 # Initialize immediately
 init_tts()
-
 
 # ================================================================
 # speak_cached()

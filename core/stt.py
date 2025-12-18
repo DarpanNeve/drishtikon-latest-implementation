@@ -7,15 +7,9 @@ import sounddevice as sd
 from google.cloud import speech
 from google.oauth2 import service_account
 
-from core.utils import absolute_path, load_credential_path
+from core.constants import CHANNELS, SAMPLE_RATE
+from core.utils import load_credential_path
 from core.logger import log
-
-# ================================================================
-#  MICROPHONE SETTINGS (Google recommended)
-# ================================================================
-SAMPLE_RATE = 16000
-CHANNELS = 1
-
 
 # ================================================================
 #  GOOGLE CREDENTIALS
@@ -41,10 +35,8 @@ def init_stt():
         print(f"[STT] ERROR loading STT credentials: {e}")
         speech_client = None
 
-
 # Initialize on import
 init_stt()
-
 
 # ================================================================
 #  AUDIO RECORDING (Raspberry Pi Safe)
@@ -73,7 +65,6 @@ def record_audio(duration=5):
 
     print("[STT] Recording complete.")
     return audio.tobytes()
-
 
 # ================================================================
 #  GOOGLE SPEECH-TO-TEXT
@@ -108,7 +99,6 @@ def speech_to_text(audio_bytes):
         return None
 
     return response.results[0].alternatives[0].transcript
-
 
 # ================================================================
 #  PUBLIC LISTEN FUNCTION

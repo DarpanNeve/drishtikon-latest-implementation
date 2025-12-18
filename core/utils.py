@@ -9,13 +9,10 @@ class CredentialError(Exception):
     """Custom exception raised when a required credential file is not found."""
     pass
 
-
 # ================================================================
 #  BASE DIRECTORY (project root)
+#  This assumes that the project root is two levels up.
 # ================================================================
-# Calculates the absolute path to the project root directory.
-# This assumes utils.py is in CORE_DIR (dir1/dir2/utils.py) and 
-# the project root is two levels up (dir1/).
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
