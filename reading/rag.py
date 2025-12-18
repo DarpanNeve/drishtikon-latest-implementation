@@ -8,12 +8,6 @@ from google import genai
 from google.genai import types
 from google.genai.errors import ClientError
 from dotenv import load_dotenv
-
-# Ensure project root is in sys.path
-PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-if PROJECT_ROOT not in sys.path:
-    sys.path.insert(0, PROJECT_ROOT)
-
 from core.constants import STORE_DISPLAY_NAME
 
 # Load environment variables

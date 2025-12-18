@@ -83,4 +83,3 @@ def clear_state():
             print("[STATE] Cleared saved reading progress.")
         except OSError as e:
             print(f"[STATE] ERROR: Could not delete state file ({e}).")
-

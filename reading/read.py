@@ -12,11 +12,6 @@ import io
 from dotenv import load_dotenv
 import google.generativeai as genai
 
-# Ensure project root is in sys.path
-PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-if PROJECT_ROOT not in sys.path:
-    sys.path.insert(0, PROJECT_ROOT)
-    
 from core.constants import RESULTS_DIR, AUDIO_DIR, PROMPT_CACHE_DIR, READING_INPUTS_DIR, SENTENCE_CACHE_DIR, SUMMARY_CACHE_DIR
 from core.utils import absolute_path, ensure_dir, load_credential_path
 from core.tts import speak
@@ -30,6 +25,7 @@ from core.prompts import *
 from core.state import *
 from core.playback_controls import play, non_blocking_play, read_key_nonblocking
 from reading.rag import upload_text_to_store, rag_query_voice
+
 load_dotenv()
 # ================================================================
 #  GOOGLE CREDENTIALS
