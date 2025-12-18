@@ -5,38 +5,17 @@ import time
 import numpy as np
 import sounddevice as sd
 from google.cloud import speech
-from google.oauth2 import service_account
 
+from core.config import init_stt
 from core.constants import CHANNELS, SAMPLE_RATE
 from core.utils import load_credential_path
 from core.logger import log
 
 # ================================================================
 #  GOOGLE CREDENTIALS
-#  Expected: BASE_DIR/core/cred/stt-key.json
 # ================================================================
 CRED_PATH = load_credential_path("core", "stt-key.json")
-
-speech_client = None
-
-def init_stt():
-    global speech_client
-
-    if not os.path.exists(CRED_PATH):
-        print(f"[STT] ERROR: Credential file does not exist: {CRED_PATH}")
-        return
-
-    try:
-        creds = service_account.Credentials.from_service_account_file(CRED_PATH)
-        speech_client = speech.SpeechClient(credentials=creds)
-        print("[STT] Google Speech client initialized.")
-
-    except Exception as e:
-        print(f"[STT] ERROR loading STT credentials: {e}")
-        speech_client = None
-
-# Initialize on import
-init_stt()
+speech_client = init_stt(CRED_PATH)
 
 # ================================================================
 #  AUDIO RECORDING (Raspberry Pi Safe)

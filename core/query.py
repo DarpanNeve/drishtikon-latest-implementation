@@ -6,21 +6,13 @@ import google.generativeai as genai
 
 from core.tts import speak
 from core.logger import log
-
-load_dotenv()
+from core.config import init_gemini
 
 # ================================================================
 # GEMINI CONFIG
 # ================================================================
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-1.5-pro")  # fallback
-
-if not GEMINI_API_KEY:
-    raise ValueError("Gemini API key missing. Set GEMINI_API_KEY in .env")
-
-genai.configure(api_key=GEMINI_API_KEY)
-
-
+init_gemini()
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-1.5-pro")
 # ================================================================
 # QUERY FUNCTION
 # ================================================================
@@ -68,7 +60,7 @@ if __name__ == "__main__":
 
     if len(sys.argv) < 3:
         print("\nUsage:")
-        print("   python query.py \"your question here\" \"text:\"\"your text here\"")
+        print("   python -m core.query \"your question here\" \"text:\"\"your text here\"")
         print("Or import answer_query() inside another script.\n")
         sys.exit(0)
 

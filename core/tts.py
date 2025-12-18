@@ -10,10 +10,9 @@ import os
 import time
 import datetime
 import soundfile as sf
-
 from google.cloud import texttospeech
-from google.oauth2 import service_account
 
+from core.config import init_tts
 from core.constants import AUDIO_DIR, PROMPT_CACHE_DIR
 from core.utils import absolute_path, ensure_dir, load_credential_path
 from core.logger import log
@@ -29,21 +28,7 @@ ensure_dir(PROMPT_CACHE_DIR)
 # GOOGLE CREDENTIALS
 # ================================================================
 CRED_PATH = load_credential_path("core", "tts-key.json")
-tts_client = None
-
-def init_tts():
-    """Initialize Google Cloud TTS client."""
-    global tts_client
-    try:
-        creds = service_account.Credentials.from_service_account_file(CRED_PATH)
-        tts_client = texttospeech.TextToSpeechClient(credentials=creds)
-        print("[TTS] Google TTS initialized.")
-    except Exception as e:
-        print(f"[TTS] ERROR loading credentials: {e}")
-        tts_client = None
-
-# Initialize immediately
-init_tts()
+tts_client = init_tts(CRED_PATH)
 
 # ================================================================
 # speak_cached()

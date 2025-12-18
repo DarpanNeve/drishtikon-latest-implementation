@@ -12,6 +12,7 @@ import io
 from dotenv import load_dotenv
 import google.generativeai as genai
 
+from core.config import init_gemini
 from core.constants import RESULTS_DIR, AUDIO_DIR, PROMPT_CACHE_DIR, READING_INPUTS_DIR, SENTENCE_CACHE_DIR, SUMMARY_CACHE_DIR
 from core.utils import absolute_path, ensure_dir, load_credential_path
 from core.tts import speak
@@ -35,13 +36,10 @@ CRED_PATH = load_credential_path("reading", "reading-key.json")
 # ================================================================
 # GEMINI CONFIG
 # ================================================================
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 GEMINI_MODEL = os.getenv("GEMINI_MODEL")
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+init_gemini()
 
-if not GEMINI_API_KEY:
-    raise ValueError("Gemini API key missing. Set GEMINI_API_KEY in .env")
-
-genai.configure(api_key=GEMINI_API_KEY)
 # ================================================================
 # HELPERS
 # ================================================================
@@ -67,6 +65,7 @@ def optimize_image(image_path):
     buf = io.BytesIO()
     img.save(buf, format="JPEG", quality=80)
     return buf.getvalue()
+
 # ================================================================
 # GEMINI OCR
 # ================================================================
@@ -88,6 +87,7 @@ def gemini_read(image_path, prompt):
     text = getattr(response, "text", "")
     duration = round(time.time() - start, 2)
     return text, duration
+
 # ================================================================
 # FILE PICKER
 # ================================================================

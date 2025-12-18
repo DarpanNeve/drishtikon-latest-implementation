@@ -3,26 +3,18 @@ import sys
 import time
 from dotenv import load_dotenv
 import google.generativeai as genai
+from core.config import init_gemini
 from core.tts import speak
 from core.logger import log
 from core.tts_player import tts_main
 from core.prompts import filler_music_summary
-from core.utils import absolute_path, ensure_dir
 from core.logger import log
-
-load_dotenv()
 
 # ================================================================
 # GEMINI CONFIG
 # ================================================================
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-1.5-pro")  # fallback
-
-if not GEMINI_API_KEY:
-    raise ValueError("Gemini API key missing. Set GEMINI_API_KEY in .env")
-
-genai.configure(api_key=GEMINI_API_KEY)
-
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-1.5-pro")
+init_gemini()
 
 # ================================================================
 # SUMMARY FUNCTION
@@ -50,6 +42,7 @@ def summarize(text: str) -> str:
 
     try:
         response = model.generate_content(prompt)
+        tts_main.stop()
     except Exception as e:
         log("SUMMARY", "-", f"Gemini error: {e}")
         speak(f"Gemini error: {e}")
@@ -70,7 +63,7 @@ if __name__ == "__main__":
 
     if len(sys.argv) < 2:
         print("\nUsage:")
-        print("   python summarize.py \"your text here\"")
+        print("   python -m core.summarize \"your text here\"")
         print("Or import summarize() inside another script.\n")
         sys.exit(0)
 
