@@ -17,6 +17,7 @@ PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
+from core.priority_audio import AudioPriority, PriorityAudioManager
 from core.utils import absolute_path, ensure_dir, load_credential_path
 from core.tts import speak
 from core.tts_player import tts_main
@@ -26,6 +27,10 @@ from core.prompts import *
 
 load_dotenv()
 
+# ================================================================
+#  INSTANTIATE PRIORITY AUDIO MANAGER
+# ================================================================
+priority_audio = PriorityAudioManager(tts_main)
 # ================================================================
 #  CONFIG & CONSTANTS (New Features)
 # ================================================================
@@ -108,36 +113,36 @@ def run_smart_yolo(frame):
 
 def gemini_summary_task(image_path):
     global gemini_active
-    gemini_active = True
-    play(tts_main, processing_p)
-    
+    priority_audio.request_play(processing_p, AudioPriority.SYSTEM)
+
     try:
-        # Optimization from your original code
         img = Image.open(image_path)
-        if img.mode == "RGBA": img = img.convert("RGB")
+        if img.mode == "RGBA":
+            img = img.convert("RGB")
+
         img.thumbnail((1600, 1600))
         buf = io.BytesIO()
         img.save(buf, format="JPEG", quality=75)
-        
+
         model = genai.GenerativeModel(GEMINI_MODEL)
         response = model.generate_content([
             {"mime_type": "image/jpeg", "data": buf.getvalue()},
             "Describe this scene for a visually impaired user in 2 sentences. Focus on obstacles."
         ])
-        
+
         text = getattr(response, "text", "Unable to describe scene.")
-        audio_path = speak(text, is_detection=True)
-        non_blocking_play(tts_main, audio_path, "Press 's' to stop", stopping_summary_p)
-        
+        audio_path = speak(text)
+        priority_audio.request_play(audio_path, AudioPriority.GEMINI)
+
     finally:
         gemini_active = False
-
 # ================================================================
 #  MAIN LOOP
 # ================================================================
 def main():
     ensure_dir(absolute_path("results", "yolo_outputs"))
-    play(tts_main, select_file_p) # "Select file or press Enter for camera"
+    # "Select file or press Enter for camera"
+    priority_audio.request_play(select_file_p, AudioPriority.SYSTEM)
     
     # Simple logic: If user doesn't pick file, use Camera
     root = tk.Tk(); root.withdraw()
@@ -148,6 +153,7 @@ def main():
     last_yolo_time = 0
 
     while True:
+        priority_audio.notify_idle()
         if cam:
             ret, frame = cam.read()
             if not ret: break
@@ -165,7 +171,8 @@ def main():
             if not gemini_active and not tts_main.is_playing():
                 desc = run_smart_yolo(frame)
                 if desc:
-                    tts_main.play(speak(desc, is_detection=True))
+                    audio_path = speak(desc, is_detection=True)
+                    priority_audio.request_play(audio_path, AudioPriority.DETECTION)
                 last_yolo_time = time.time()
 
         # MANUAL GEMINI (G)
@@ -174,7 +181,7 @@ def main():
 
         # QUIT (Q)
         elif key == ord('q'):
-            play(tts_main, exiting_detection_module_p)
+            priority_audio.play_exit(exiting_detection_module_p)
             break
 
     if cam: cam.release()

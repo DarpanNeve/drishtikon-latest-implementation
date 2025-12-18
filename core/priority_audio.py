@@ -36,6 +36,25 @@ class PriorityAudioManager:
             # Lower or equal priority → reject
             return False
 
+    def play_exit(self, audio_path):
+            """
+            Play exit audio safely and block until done.
+            No other audio is allowed after this.
+            """
+            if not audio_path:
+                return
+
+            with self._lock:
+                # Hard stop everything
+                self.tts.stop()
+                self.current_priority = None
+
+                # Play exit audio
+                self.tts.play(audio_path)
+
+            # BLOCK until finished
+            self.tts.wait()
+
     def notify_idle(self):
         """
         Reset priority when playback finishes.
