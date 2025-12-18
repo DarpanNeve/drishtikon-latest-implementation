@@ -5,37 +5,45 @@
 # ================================================================
 import re
 from typing import List
-def split_into_sentences(text: str, min_len: int = 100, max_len: int = 200) -> List[str]:
+def split_into_sentences(
+    text: str,
+    min_len: int = 80,
+    max_len: int = 220,
+) -> List[str]:
     """
-    Split text into 'forgiving' sentence chunks.
-    Forgiving behavior:
-    - Split on ., ?, ! followed by whitespace
-    - Strip whitespace around each piece
-    - Drop completely empty chunks
-    - Merge very short fragments (len < min_len) into the previous sentence
-    to reduce OCR-induced fragmentation.
-    This is designed for noisy OCR text where:
-    - Abbreviations (e.g., "Dr.", "Mr.") may appear
-    - Line breaks or hyphenation may cause tiny fragments
+    Split OCR text into speakable chunks for TTS.
+
+    Design goals:
+    - Prefer natural breaks after punctuation (.!?;)
+    - Avoid very short chunks caused by OCR noise
+    - Merge small fragments into the previous chunk
+    - Keep chunks within a comfortable TTS length window
+
+    This is NOT a linguistically correct sentence splitter.
     """
+
     if not text:
         return []
-    # Basic split on sentence-ending punctuation + whitespace
+
+    # Split after sentence-like punctuation, keep punctuation attached
     raw_chunks = re.split(r'(?<=[.!?;])', text)
-    # Clean up whitespace and remove empties
-    cleaned = [chunk.strip() for chunk in raw_chunks if chunk and chunk.strip()]
-    if not cleaned:
-        return []
 
-    sentences: List[str] = []
+    chunks = []
+    for piece in raw_chunks:
+        piece = piece.strip()
+        if not piece:
+            continue
 
-    for chunk in cleaned:
-        # If the chunk is very short (likely OCR noise), merge into previous
-        if sentences and len(chunk) < min_len and len(chunk) + len(sentences[-1]) < max_len:
-            sentences[-1] = sentences[-1] + " " + chunk
+        if (
+            chunks
+            and len(piece) < min_len
+            and len(chunks[-1]) + len(piece) <= max_len
+        ):
+            chunks[-1] += " " + piece
         else:
-            sentences.append(chunk)
-    return sentences
+            chunks.append(piece)
+
+    return chunks
 
 if __name__ == "__main__":
     sample = (
