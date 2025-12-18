@@ -54,7 +54,7 @@ def non_blocking_play(
         key = read_key_nonblocking()
         if key == "s":
             play(tts, stop_audio_file_name)
-            time.sleep(1.5)
+            # time.sleep(1.5)
             break
 
         time.sleep(0.05)  # avoid busy loop

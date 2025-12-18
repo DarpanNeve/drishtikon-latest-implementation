@@ -44,10 +44,12 @@ def ensure_results_dir():
     ensure_dir(absolute_path("results", "reading_outputs"))
     ensure_dir(absolute_path("results", "prompt_cache"))
     ensure_dir(absolute_path("results", "prompt_cache", "sentences"))
+    ensure_dir(absolute_path("results", "prompt_cache", "summaries"))
 
 PROMPT_CACHE_DIR = absolute_path("results", "prompt_cache")
 AUDIO_OUTPUT_DIR = absolute_path("results", "audio_outputs")
 SENTENCE_CACHE_DIR = absolute_path("results", "prompt_cache", "sentences")
+SUMMARY_CACHE_DIR = absolute_path("results", "prompt_cache", "summaries")
 # ================================================================
 # IMAGE OPTIMIZATION
 # ================================================================
@@ -177,6 +179,8 @@ def main():
     # NEW TASK FLOW (file select + OCR + chunking)
     # ---------------------------------------------------------
     if not resume_mode:
+        # CLEAR STATE
+        clear_state()
         # INTRO
         play(tts_main, select_file_p)
         # STEP 1 — Select file
@@ -232,9 +236,6 @@ def main():
     print("\n===== CHUNKED READING (PAUSE + SUMMARY + VOICE MODE) =====\n")
     if resume_mode:
         print(f"[RESUME] Continuing from sentence {current_index + 1} of {len(sentences)}")
-    # Summary cache vars
-    last_summary_audio = None
-    last_summary_index = -1
     while current_index < len(sentences):
         sentence = sentences[current_index]
         print(f"[READ] {current_index + 1}/{len(sentences)} → {sentence}")
@@ -308,20 +309,17 @@ def main():
                             play(tts_main, no_content_yet_p)
                             play(tts_main, back_pause_menu_p)
                             continue
-                        # Reuse cached summary if applicable
-                        if last_summary_audio is not None and last_summary_index == current_index:
-                            summary_audio = last_summary_audio
-                        else:
-                            play(tts_main, generating_summary_p)
+                        play(tts_main, generating_summary_p)
+                        summary_audio_file_name = f"summary_0{current_index}.wav" if current_index < 10 else f"summary_{current_index}.wav"
+                        summary_text = None
+                        if not os.path.exists(absolute_path(SUMMARY_CACHE_DIR, summary_audio_file_name)):
                             summary_text = summarize(" ".join(read_so_far))
-                            summary_audio = speak(summary_text)
-                            print("\n========SUMMARY=======\n")
-                            print(summary_text)
-                            last_summary_audio = summary_audio
-                            last_summary_index = current_index
+                        summary_audio = speak_cached(summary_text, absolute_path(SUMMARY_CACHE_DIR, summary_audio_file_name))
+                        print("\n========SUMMARY=======\n")
+                        print(summary_text)
                         non_blocking_play(tts_main, summary_audio, "Press 's' to stop summary", stopping_summary_p)
                         play(tts_main, back_pause_menu_p)
-                        tts_main.play(filler_music_summary)
+                        tts_main.play(filler_music)
                         continue
                     # QUIT
                     elif choice == "q":
@@ -386,17 +384,14 @@ def main():
                         if not read_so_far:
                             play(tts_main, no_content_yet_p)
                             continue
-                        # Reuse cached summary if applicable
-                        if last_summary_audio is not None and last_summary_index == current_index:
-                            summary_audio = last_summary_audio
-                        else:
-                            play(tts_main, generating_summary_p)
+                        play(tts_main, generating_summary_p)
+                        summary_audio_file_name = f"summary_0{current_index}.wav" if current_index < 10 else f"summary_{current_index}.wav"
+                        summary_text = None
+                        if not os.path.exists(absolute_path(SUMMARY_CACHE_DIR, summary_audio_file_name)):
                             summary_text = summarize(" ".join(read_so_far))
-                            summary_audio = speak(summary_text)
-                            print("\n========SUMMARY=======\n")
-                            print(summary_text)
-                            last_summary_audio = summary_audio
-                            last_summary_index = current_index
+                        summary_audio = speak_cached(summary_text, absolute_path(SUMMARY_CACHE_DIR, summary_audio_file_name))
+                        print("\n========SUMMARY=======\n")
+                        print(summary_text)
                         non_blocking_play(tts_main, summary_audio, "Press 's' to stop summary", stopping_summary_p)
                         play(tts_main, back_pause_menu_p)
                         continue
@@ -464,9 +459,6 @@ def main():
         # Finished this sentence
         read_so_far.append(sentence)
         current_index += 1
-        # Invalidate summary cache because content changed
-        last_summary_audio = None
-        last_summary_index = -1
     # ---------------------------------------------------------
     # ALL SENTENCES COMPLETE
     # ---------------------------------------------------------
