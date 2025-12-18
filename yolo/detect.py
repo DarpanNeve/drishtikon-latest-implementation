@@ -167,12 +167,21 @@ def main():
         key = cv2.waitKey(1) & 0xFF
 
         # AUTO-YOLO with Spatial Awareness (Every 8 seconds)
-        if time.time() - last_yolo_time > 8:
+        YOLO_FAST = 0.6     # moving / dynamic
+        YOLO_SLOW = 2.0     # static scene
+        current_yolo_interval = YOLO_FAST
+
+        if time.time() - last_yolo_time > current_yolo_interval:
             if not gemini_active and not tts_main.is_playing():
                 desc = run_smart_yolo(frame)
+
                 if desc:
                     audio_path = speak(desc, is_detection=True)
                     priority_audio.request_play(audio_path, AudioPriority.DETECTION)
+                    current_yolo_interval = YOLO_FAST   # scene changing
+                else:
+                    current_yolo_interval = YOLO_SLOW   # scene stable
+
                 last_yolo_time = time.time()
 
         # MANUAL GEMINI (G)
