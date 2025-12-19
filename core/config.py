@@ -36,7 +36,7 @@ def init_stt(CRED_PATH):
     return speech_client
 
 # ================================================================
-# GOOGLE TTSCONFIG
+# GOOGLE TTS CONFIG
 # ================================================================
 def init_tts(CRED_PATH):
     """Initialize Google Cloud TTS client."""

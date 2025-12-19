@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 import sys
 import subprocess
 import cv2
@@ -111,6 +112,8 @@ def choose_file():
     img = cv2.imread(fp)
     ts = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     save_path = absolute_path("results", "reading_inputs", f"capture_{ts}.jpg")
+    if Path(fp).resolve().parent == Path(save_path).resolve().parent:
+        return fp
     cv2.imwrite(save_path, img)
     return save_path
 
@@ -167,6 +170,9 @@ def clear_audio_dir():
 # MAIN
 # ================================================================
 def main():
+    FILLER_ARRAY = [filler_music, filler_music_summary]
+    FILLER_INDEX = 0
+    FILLER = FILLER_ARRAY[FILLER_INDEX]
     ensure_results_dir()
     clear_audio_dir()
     # ---------------------------------------------------------
@@ -209,6 +215,7 @@ def main():
         play(tts_main, processing_p)
         tts_main.play(filler_music)
         refinement_prompt = f"""
+        MAKE SURE TO EXTRACT TEXT IN THE RIGHT ORDER
         If the image contains:
         Error screen or artifact => Explain error.
         Comic Book artifact => CONVERT into book style narration.
@@ -376,6 +383,9 @@ def main():
                         play(tts_main, exiting_module_p)
                         return
                     else:
+                        tts_main.play(FILLER)
+                        FILLER_INDEX = (FILLER_INDEX + 1) % len(FILLER_ARRAY)
+                        FILLER = FILLER_ARRAY[FILLER_INDEX]
                         print("Invalid option.")
                         continue
         # =====================================================
