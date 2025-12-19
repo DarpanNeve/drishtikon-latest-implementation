@@ -288,7 +288,6 @@ def main():
         # =====================================================
             if key == "p":
                 play(tts_main, pause_beep)
-                tts_main.play(filler_music)
                 # ----- PAUSE MENU -----
                 while True:
                     print("\nPaused. Options:")
@@ -298,6 +297,7 @@ def main():
                     print(" x = ask a query")
                     sys.stdout.flush()
                     choice = sys.stdin.readline().strip().lower()
+
                     # RESUME → restart sentence
                     if choice == "p":
                         play(tts_main, resume_beep)
@@ -305,6 +305,7 @@ def main():
                         print("[PATH]", sentence_audio)
                         tts_main.play(sentence_audio)
                         break
+
                     # QUERY RESOLUTION
                     elif choice == "x":
                         # Announce query mode
@@ -312,10 +313,10 @@ def main():
                         # Listen for user's voice question
                         question = listen_for_command(is_question=True)
                         if question is None or not question.strip():
-                            # No question → back to voice control
-                            play(tts_main, vc_back_p)
-                            # time.sleep(1)
-                            continue   # <── stays inside voice mode
+                            # No question → back to pause menu
+                            play(tts_main, back_pause_menu_p)
+        
+                            continue
                         # Generate answer
                         play(tts_main, generating_answer_p)
                         task = LLMTask(
@@ -334,10 +335,10 @@ def main():
                         # Speak the answer
                         answer_audio = speak(answer)
                         non_blocking_play(tts_main, answer_audio, "Press 's' to stop response", stopping_response_p)
-                        # Finished answer → back to voice mode
+                        # Finished answer → back to pause menu
                         play(tts_main, back_pause_menu_p)
-                        tts_main.play(filler_music_summary)
-                        continue  # <── stay inside voice mode
+                        continue
+
                     # SUMMARY
                     elif choice == "m":
                         if not read_so_far:
@@ -355,15 +356,14 @@ def main():
                         print("\n========SUMMARY=======\n")
                         print(summary_text)
                         if not summary_text or not summary_text.strip():
-                            play(tts_main, vc_back_p)
-                            # time.sleep(1)
+                            play(tts_main, back_pause_menu_p)
                             continue
 
                         summary_audio = speak_cached(summary_text, absolute_path(SUMMARY_CACHE_DIR, summary_audio_file_name))
                         non_blocking_play(tts_main, summary_audio, "Press 's' to stop summary", stopping_summary_p)
                         play(tts_main, back_pause_menu_p)
-                        tts_main.play(filler_music)
                         continue
+
                     # QUIT
                     elif choice == "q":
                         # SAVE STATE BEFORE EXIT
@@ -387,6 +387,7 @@ def main():
                 # ----- PAUSE MENU -----
                 while True:
                     choice = listen_for_command()
+
                     # RESUME → restart sentence
                     if choice is None or choice == "p":
                         play(tts_main, resume_beep)
@@ -394,6 +395,7 @@ def main():
                         print("[PATH]", sentence_audio)
                         tts_main.play(sentence_audio)
                         break
+
                     # RAG SEARCH
                     elif choice == "r":
                         # Announce rag mode
@@ -403,7 +405,6 @@ def main():
                         if question is None or not question.strip():
                             # No question → back to voice mode
                             play(tts_main, vc_back_p)
-                            # time.sleep(1)
                             continue
                         # Generate RAG answer
                         play(tts_main, generating_answer_p)
@@ -419,15 +420,14 @@ def main():
 
                         if not answer or not answer.strip() or answer.startswith("RAG Query Error"):
                             play(tts_main, vc_back_p)
-                            # time.sleep(1)
                             continue
                         # Speak the answer
                         answer_audio = speak(answer)
                         non_blocking_play(tts_main, answer_audio, "Press 's' to stop response", stopping_response_p)
                         # Finished answer → back to voice mode
                         play(tts_main, vc_back_p)
-                        # time.sleep(1)
-                        continue  # <── stay inside voice mode
+                        continue
+
                     # SUMMARY
                     elif choice == "m":
                         if not read_so_far:
@@ -436,15 +436,23 @@ def main():
                         play(tts_main, generating_summary_p)
                         summary_audio_file_name = f"summary_0{current_index}.wav" if current_index < 10 else f"summary_{current_index}.wav"
                         summary_text = "Cached"
+
+                        if not os.path.exists(absolute_path(SUMMARY_CACHE_DIR, summary_audio_file_name)):
+                            task = LLMTask(summarize, " ".join(read_so_far))
+                            summary_text = run_llm_task(task)
+
+                        print("\n========SUMMARY=======\n")
+                        print(summary_text)
+
                         if not summary_text or not summary_text.strip():
                             play(tts_main, vc_back_p)
-                            # time.sleep(1)
                             continue
 
                         summary_audio = speak_cached(summary_text, absolute_path(SUMMARY_CACHE_DIR, summary_audio_file_name))
                         non_blocking_play(tts_main, summary_audio, "Press 's' to stop summary", stopping_summary_p)
-                        play(tts_main, back_pause_menu_p)
+                        play(tts_main, vc_back_p)
                         continue
+
                     # QUERY RESOLUTION
                     elif choice == "x":
                         # Announce query mode
@@ -454,7 +462,6 @@ def main():
                         if question is None or not question.strip():
                             # No question → back to voice control
                             play(tts_main, vc_back_p)
-                            # time.sleep(1)
                             continue   # <── stays inside voice mode
 
                         # Generate answer
@@ -471,15 +478,14 @@ def main():
 
                         if not answer or not answer.strip():
                             play(tts_main, vc_back_p)
-                            # time.sleep(1)
                             continue
                         # Speak the answer
                         answer_audio = speak(answer)
                         non_blocking_play(tts_main, answer_audio, "Press 's' to stop response", stopping_response_p)
                         # Finished answer → back to voice mode
                         play(tts_main, vc_back_p)
-                        # time.sleep(1)
                         continue  # <── stay inside voice mode
+
                     # QUIT
                     elif choice == "q":
                         # SAVE STATE BEFORE EXIT
