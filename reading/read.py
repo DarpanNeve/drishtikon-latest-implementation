@@ -216,8 +216,11 @@ def main():
         tts_main.play(filler_music)
         refinement_prompt = f"""
         MAKE SURE TO EXTRACT TEXT IN THE RIGHT ORDER.
+        ADD A PREFIX "SENT_GRP" AFTER EVERY THREE SENTENCES.
         If the image contains:
         Math Equations or Figures => ONLY EXPLAIN THE CONCEPT WITHOUT MATH CONSTRUCT.
+        DO NOT say X subscript Y, SAY X of Y.
+        DO NOT X superscript Y, SAY X with respect to Y.
         Abbreviations => CONVERT TO FULL FORMS.
         Error screen or artifact => Explain error.
         Comic Book artifact => CONVERT into book style narration.

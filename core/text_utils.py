@@ -45,6 +45,9 @@ def split_into_sentences(
 
     return chunks
 
+def split_into_sentences(text):
+    return text.split("SENT_GRP")
+
 if __name__ == "__main__":
     sample = (
     "This is a test. OCR text can be messy. "
