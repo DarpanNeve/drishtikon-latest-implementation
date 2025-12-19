@@ -215,8 +215,10 @@ def main():
         play(tts_main, processing_p)
         tts_main.play(filler_music)
         refinement_prompt = f"""
-        MAKE SURE TO EXTRACT TEXT IN THE RIGHT ORDER
+        MAKE SURE TO EXTRACT TEXT IN THE RIGHT ORDER.
         If the image contains:
+        Math Equations or Figures => ONLY EXPLAIN THE CONCEPT WITHOUT MATH CONSTRUCT.
+        Abbreviations => CONVERT TO FULL FORMS.
         Error screen or artifact => Explain error.
         Comic Book artifact => CONVERT into book style narration.
         Social media message text => CONVERT into book style narration.
