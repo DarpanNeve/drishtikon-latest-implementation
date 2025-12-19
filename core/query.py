@@ -1,7 +1,6 @@
 import os
 import sys
 import time
-from dotenv import load_dotenv
 import google.generativeai as genai
 
 from core.tts import speak

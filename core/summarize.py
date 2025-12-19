@@ -1,20 +1,16 @@
 import os
 import sys
 import time
-from dotenv import load_dotenv
 import google.generativeai as genai
 from core.config import init_gemini
 from core.tts import speak
-from core.logger import log
-from core.tts_player import tts_main
-from core.prompts import filler_music_summary
 from core.logger import log
 
 # ================================================================
 # GEMINI CONFIG
 # ================================================================
-GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-1.5-pro")
 init_gemini()
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-1.5-pro")
 
 # ================================================================
 # SUMMARY FUNCTION
@@ -41,7 +37,6 @@ def summarize(text: str) -> str:
 
     try:
         response = model.generate_content(prompt)
-        tts_main.stop()
     except Exception as e:
         log("SUMMARY", "-", f"Gemini error: {e}")
         speak(f"Gemini error: {e}")

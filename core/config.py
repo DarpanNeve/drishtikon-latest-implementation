@@ -5,8 +5,6 @@ from google.oauth2 import service_account
 from google.cloud import speech
 from google.cloud import texttospeech
 
-from core.utils import load_credential_path
-
 load_dotenv()
 # ================================================================
 # GEMINI CONFIG
