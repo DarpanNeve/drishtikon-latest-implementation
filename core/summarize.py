@@ -28,7 +28,6 @@ def summarize(text: str) -> str:
     if not text or len(text.strip()) == 0:
         return "No text provided."
     
-    tts_main.play(filler_music_summary)
     prompt = f"""
     You are an AI summarizer. Summarize the following text clearly and concisely
     without changing the meaning ({int(len(text) / 4)} words max):
