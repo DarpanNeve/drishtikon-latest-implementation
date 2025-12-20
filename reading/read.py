@@ -217,6 +217,7 @@ def main():
         refinement_prompt = f"""
         MAKE SURE TO EXTRACT TEXT IN THE RIGHT ORDER.
         ADD A PREFIX "SENT_GRP" AFTER EVERY TWO SENTENCES.
+        IF POEM, ADD PREFIX "SENT_GRP" AFTER EVERY TWO 'LINES'.
         If the image contains:
         Math Equations or Figures => ONLY EXPLAIN THE CONCEPT WITHOUT MATH CONSTRUCT.
         DO NOT say X subscript Y, SAY X of Y.
@@ -358,6 +359,7 @@ def main():
                             play(tts_main, back_pause_menu_p)
                             continue
                         play(tts_main, generating_summary_p)
+                        tts_main.play(filler_music_summary)
                         summary_audio_file_name = f"summary_0{current_index}.wav" if current_index < 10 else f"summary_{current_index}.wav"
                         summary_text = "Cached"
 
@@ -518,7 +520,7 @@ def main():
         # =====================================================
         # (n) -> NEXT SENTENCE
         # =====================================================
-            elif key == "n" and current_index < len(sentences) - 1:
+            elif key == "n" and current_index < len(sentences) - 2:
                 play(tts_main, pause_beep)
                 continue
         # =====================================================
