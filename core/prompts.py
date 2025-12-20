@@ -8,9 +8,9 @@
 from core.tts import speak_cached
 from core.utils import absolute_path
 
-# ================================================================
-# MAIN CONTROLLER PROMPTS (WAV Cached)
-# ================================================================
+# ---------------------------
+# MAIN CONTROLLER PROMPTS
+# ---------------------------
 
 system_ready_p = speak_cached(
     "System ready. Say read, detect, or exit.",
@@ -66,7 +66,7 @@ switch_to_rasp_p = speak_cached(
 )
 
 # ---------------------------
-# MAIN SYSTEM PROMPTS
+# SYSTEM PROMPTS
 # ---------------------------
 resume_previous_task_p = speak_cached(
     "Shall I continue with the previous reading task?",
@@ -160,7 +160,6 @@ back_pause_menu_p = speak_cached(
     "back_pause_menu.wav"
 )
 
-
 # ---------------------------
 # VOICE CONTROL PROMPTS
 # ---------------------------
@@ -184,12 +183,17 @@ vc_back_p = speak_cached(
     "back_voice.wav"
 )
 
-
 # ---------------------------
 # RAG SEARCH PROMPTS
 # ---------------------------
-enter_rag_mode_p = speak_cached("This is RAG search. Ask your query", "rag_intro.wav")
-generating_rag_answer_p = speak_cached("Searching...", "generating_rag_answer.wav")
+enter_rag_mode_p = speak_cached(
+    "This is RAG search. Ask your query",
+    "rag_intro.wav"
+)
+generating_rag_answer_p = speak_cached(
+    "Searching...",
+    "generating_rag_answer.wav"
+)
 
 # ---------------------------
 # DETECT PROMPTS

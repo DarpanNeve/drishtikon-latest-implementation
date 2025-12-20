@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 import sys
 import subprocess
 import cv2
@@ -11,45 +12,48 @@ from PIL import Image
 import io
 from dotenv import load_dotenv
 import google.generativeai as genai
-# Ensure project root is in sys.path
-PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-if PROJECT_ROOT not in sys.path:
-    sys.path.insert(0, PROJECT_ROOT)
+
+from core.config import init_gemini
+from core.constants import RESULTS_DIR, AUDIO_DIR, PROMPT_CACHE_DIR, READING_INPUTS_DIR, SENTENCE_CACHE_DIR, SUMMARY_CACHE_DIR
 from core.utils import absolute_path, ensure_dir, load_credential_path
 from core.tts import speak
 from core.stt_commands import listen_for_command
 from core.tts_player import tts_main
 from core.logger import log
 from core.text_utils import split_into_sentences
+from core.llm_task import LLMTask
+from core.llm_runner import run_llm_task
 from core.summarize import summarize
 from core.query import answer_query
 from core.prompts import *
 from core.state import *
 from core.playback_controls import play, non_blocking_play, read_key_nonblocking
 from reading.rag import upload_text_to_store, rag_query_voice
+
 load_dotenv()
 # ================================================================
-#  CREDENTIALS
+#  GOOGLE CREDENTIALS
 # ================================================================
 CRED_PATH = load_credential_path("reading", "reading-key.json")
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+
+# ================================================================
+# GEMINI CONFIG
+# ================================================================
 GEMINI_MODEL = os.getenv("GEMINI_MODEL")
-if GEMINI_API_KEY:
-    genai.configure(api_key=GEMINI_API_KEY)
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+init_gemini()
+
 # ================================================================
 # HELPERS
 # ================================================================
 def ensure_results_dir():
-    ensure_dir(absolute_path("results"))
-    ensure_dir(absolute_path("results", "reading_outputs"))
-    ensure_dir(absolute_path("results", "prompt_cache"))
-    ensure_dir(absolute_path("results", "prompt_cache", "sentences"))
-    ensure_dir(absolute_path("results", "prompt_cache", "summaries"))
+    ensure_dir(RESULTS_DIR)
+    ensure_dir(READING_INPUTS_DIR)
+    ensure_dir(AUDIO_DIR)
+    ensure_dir(PROMPT_CACHE_DIR)
+    ensure_dir(SENTENCE_CACHE_DIR)
+    ensure_dir(SUMMARY_CACHE_DIR)
 
-PROMPT_CACHE_DIR = absolute_path("results", "prompt_cache")
-AUDIO_OUTPUT_DIR = absolute_path("results", "audio_outputs")
-SENTENCE_CACHE_DIR = absolute_path("results", "prompt_cache", "sentences")
-SUMMARY_CACHE_DIR = absolute_path("results", "prompt_cache", "summaries")
 # ================================================================
 # IMAGE OPTIMIZATION
 # ================================================================
@@ -64,6 +68,7 @@ def optimize_image(image_path):
     buf = io.BytesIO()
     img.save(buf, format="JPEG", quality=80)
     return buf.getvalue()
+
 # ================================================================
 # GEMINI OCR
 # ================================================================
@@ -75,7 +80,6 @@ def gemini_read(image_path, prompt):
         return "Gemini not configured.", 0
     optimized_bytes = optimize_image(image_path)
     model = genai.GenerativeModel(GEMINI_MODEL)
-    final_text = []
     start = time.time()
     response = model.generate_content(
         [
@@ -86,6 +90,7 @@ def gemini_read(image_path, prompt):
     text = getattr(response, "text", "")
     duration = round(time.time() - start, 2)
     return text, duration
+
 # ================================================================
 # FILE PICKER
 # ================================================================
@@ -106,21 +111,28 @@ def choose_file():
     # Save copy to results
     img = cv2.imread(fp)
     ts = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-    save_path = absolute_path("results", "reading_outputs", f"capture_{ts}.jpg")
+    save_path = absolute_path("results", "reading_inputs", f"capture_{ts}.jpg")
+    if Path(fp).resolve().parent == Path(save_path).resolve().parent:
+        return fp
     cv2.imwrite(save_path, img)
     return save_path
+
 # ================================================================
 # CAMERA CAPTURE - Raspberry Pi compatible
 # ================================================================
 def capture_with_libcamera():
     ts = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-    out_path = absolute_path("results", "reading_outputs", f"capture_{ts}.jpg")
+    out_path = absolute_path("results", "reading_inputs", f"capture_{ts}.jpg")
     cmd = ["libcamera-still", "-o", out_path, "--immediate", "--timeout", "1"]
     try:
         subprocess.run(cmd, check=True)
         return out_path
     except Exception:
         return None
+
+# ================================================================
+# CAMERA CAPTURE
+# ================================================================
 def capture_image():
     # Try OpenCV camera first (legacy mode)
     cam = cv2.VideoCapture(0)
@@ -134,7 +146,7 @@ def capture_image():
             key = cv2.waitKey(1)
             if key == 32:  # SPACE
                 ts = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-                path = absolute_path("results", "reading_outputs", f"capture_{ts}.jpg")
+                path = absolute_path("results", "reading_inputs", f"capture_{ts}.jpg")
                 cv2.imwrite(path, frame)
                 cam.release()
                 cv2.destroyAllWindows()
@@ -146,14 +158,23 @@ def capture_image():
     # If OpenCV fails → fallback to libcamera
     play(tts_main, switch_to_rasp_p)
     return capture_with_libcamera()
+
+# ================================================================
+# CLEAR AUDIO DIRECTORY
+# ================================================================
+def clear_audio_dir():
+    for file in os.listdir(AUDIO_DIR):
+        os.remove(absolute_path(AUDIO_DIR, file))
+        
 # ================================================================
 # MAIN
 # ================================================================
 def main():
+    FILLER_ARRAY = [filler_music, filler_music_summary]
+    FILLER_INDEX = 0
+    FILLER = FILLER_ARRAY[FILLER_INDEX]
     ensure_results_dir()
-
-    for file in os.listdir(AUDIO_OUTPUT_DIR):
-        os.remove(absolute_path(AUDIO_OUTPUT_DIR, file))
+    clear_audio_dir()
     # ---------------------------------------------------------
     # CHECK FOR EXISTING READING STATE (resume_mode)
     # ---------------------------------------------------------
@@ -173,7 +194,6 @@ def main():
             resume_mode = True
         else:
             print("[STATE] Discarding saved task...")
-            clear_state()
             resume_mode = False
     # ---------------------------------------------------------
     # NEW TASK FLOW (file select + OCR + chunking)
@@ -195,7 +215,13 @@ def main():
         play(tts_main, processing_p)
         tts_main.play(filler_music)
         refinement_prompt = f"""
+        MAKE SURE TO EXTRACT TEXT IN THE RIGHT ORDER.
+        ADD A PREFIX "SENT_GRP" AFTER EVERY TWO SENTENCES.
         If the image contains:
+        Math Equations or Figures => ONLY EXPLAIN THE CONCEPT WITHOUT MATH CONSTRUCT.
+        DO NOT say X subscript Y, SAY X of Y.
+        DO NOT X superscript Y, SAY X raised to Y.
+        Abbreviations => CONVERT TO FULL FORMS.
         Error screen or artifact => Explain error.
         Comic Book artifact => CONVERT into book style narration.
         Social media message text => CONVERT into book style narration.
@@ -205,14 +231,28 @@ def main():
         No text => Say "NO TEXT FOUND." and SUMMARIZE the visual in 15 WORDS.
         DO NOT include asterisks, quotes, or any formatting.
         """
-        text, duration = gemini_read(img_path, refinement_prompt)
-        log("READING", img_path, f"{len(text)} chars", duration)
+        
+        task = LLMTask(
+            gemini_read,
+            img_path,
+            refinement_prompt
+        )
+
+        result = run_llm_task(task)
+        text = None
+        duration = None
+        if result:
+            text, duration = result
+            log("READING", img_path, f"{len(text)} chars", duration)
+        else:
+            main()
         # After OCR:
         def helper_upload_text_to_store(text):
             store_name = upload_text_to_store(text)
             if not store_name:
                 print("\nCould not perform RAG query due to upload failure.")
-
+        if not text:
+            return
         threading.Thread(target=helper_upload_text_to_store, args=(text, ), daemon=True).start()
         print("\n===== OCR RESULT =====\n")
         print(text)
@@ -260,7 +300,6 @@ def main():
         # =====================================================
             if key == "p":
                 play(tts_main, pause_beep)
-                tts_main.play(filler_music)
                 # ----- PAUSE MENU -----
                 while True:
                     print("\nPaused. Options:")
@@ -270,6 +309,7 @@ def main():
                     print(" x = ask a query")
                     sys.stdout.flush()
                     choice = sys.stdin.readline().strip().lower()
+
                     # RESUME → restart sentence
                     if choice == "p":
                         play(tts_main, resume_beep)
@@ -277,6 +317,7 @@ def main():
                         print("[PATH]", sentence_audio)
                         tts_main.play(sentence_audio)
                         break
+
                     # QUERY RESOLUTION
                     elif choice == "x":
                         # Announce query mode
@@ -284,25 +325,32 @@ def main():
                         # Listen for user's voice question
                         question = listen_for_command(is_question=True)
                         if question is None or not question.strip():
-                            # No question → back to voice control
-                            play(tts_main, vc_back_p)
-                            # time.sleep(1)
-                            continue   # <── stays inside voice mode
+                            # No question → back to pause menu
+                            play(tts_main, back_pause_menu_p)
+        
+                            continue
                         # Generate answer
                         play(tts_main, generating_answer_p)
-                        answer = answer_query(" ".join(read_so_far), question)
+                        task = LLMTask(
+                            answer_query,
+                            " ".join(read_so_far),
+                            question
+                        )
+                        answer = run_llm_task(task)
+
                         print("\n========ANSWER=======\n")
                         print(answer)
-                        if not answer.strip():
+
+                        if not answer or not answer.strip():
                             play(tts_main, back_pause_menu_p)
                             continue
                         # Speak the answer
                         answer_audio = speak(answer)
                         non_blocking_play(tts_main, answer_audio, "Press 's' to stop response", stopping_response_p)
-                        # Finished answer → back to voice mode
+                        # Finished answer → back to pause menu
                         play(tts_main, back_pause_menu_p)
-                        tts_main.play(filler_music_summary)
-                        continue  # <── stay inside voice mode
+                        continue
+
                     # SUMMARY
                     elif choice == "m":
                         if not read_so_far:
@@ -311,16 +359,23 @@ def main():
                             continue
                         play(tts_main, generating_summary_p)
                         summary_audio_file_name = f"summary_0{current_index}.wav" if current_index < 10 else f"summary_{current_index}.wav"
-                        summary_text = None
+                        summary_text = "Cached"
+
                         if not os.path.exists(absolute_path(SUMMARY_CACHE_DIR, summary_audio_file_name)):
-                            summary_text = summarize(" ".join(read_so_far))
-                        summary_audio = speak_cached(summary_text, absolute_path(SUMMARY_CACHE_DIR, summary_audio_file_name))
+                            task = LLMTask(summarize, " ".join(read_so_far))
+                            summary_text = run_llm_task(task)
+
                         print("\n========SUMMARY=======\n")
                         print(summary_text)
+                        if not summary_text or not summary_text.strip():
+                            play(tts_main, back_pause_menu_p)
+                            continue
+
+                        summary_audio = speak_cached(summary_text, absolute_path(SUMMARY_CACHE_DIR, summary_audio_file_name))
                         non_blocking_play(tts_main, summary_audio, "Press 's' to stop summary", stopping_summary_p)
                         play(tts_main, back_pause_menu_p)
-                        tts_main.play(filler_music)
                         continue
+
                     # QUIT
                     elif choice == "q":
                         # SAVE STATE BEFORE EXIT
@@ -333,6 +388,9 @@ def main():
                         play(tts_main, exiting_module_p)
                         return
                     else:
+                        tts_main.play(FILLER)
+                        FILLER_INDEX = (FILLER_INDEX + 1) % len(FILLER_ARRAY)
+                        FILLER = FILLER_ARRAY[FILLER_INDEX]
                         print("Invalid option.")
                         continue
         # =====================================================
@@ -344,6 +402,7 @@ def main():
                 # ----- PAUSE MENU -----
                 while True:
                     choice = listen_for_command()
+
                     # RESUME → restart sentence
                     if choice is None or choice == "p":
                         play(tts_main, resume_beep)
@@ -351,6 +410,7 @@ def main():
                         print("[PATH]", sentence_audio)
                         tts_main.play(sentence_audio)
                         break
+
                     # RAG SEARCH
                     elif choice == "r":
                         # Announce rag mode
@@ -360,25 +420,29 @@ def main():
                         if question is None or not question.strip():
                             # No question → back to voice mode
                             play(tts_main, vc_back_p)
-                            # time.sleep(1)
                             continue
                         # Generate RAG answer
                         play(tts_main, generating_answer_p)
                         # --- RAG CALL ---
-                        answer = rag_query_voice(question)
+                        task = LLMTask(
+                            rag_query_voice,
+                            question
+                        )
+
+                        answer = run_llm_task(task)
                         print("\n========RAG ANSWER=======\n")
                         print(answer)
-                        if not answer.strip() or answer.startswith("RAG Query Error"):
+
+                        if not answer or not answer.strip() or answer.startswith("RAG Query Error"):
                             play(tts_main, vc_back_p)
-                            # time.sleep(1)
                             continue
                         # Speak the answer
                         answer_audio = speak(answer)
                         non_blocking_play(tts_main, answer_audio, "Press 's' to stop response", stopping_response_p)
                         # Finished answer → back to voice mode
                         play(tts_main, vc_back_p)
-                        # time.sleep(1)
-                        continue  # <── stay inside voice mode
+                        continue
+
                     # SUMMARY
                     elif choice == "m":
                         if not read_so_far:
@@ -386,15 +450,24 @@ def main():
                             continue
                         play(tts_main, generating_summary_p)
                         summary_audio_file_name = f"summary_0{current_index}.wav" if current_index < 10 else f"summary_{current_index}.wav"
-                        summary_text = None
+                        summary_text = "Cached"
+
                         if not os.path.exists(absolute_path(SUMMARY_CACHE_DIR, summary_audio_file_name)):
-                            summary_text = summarize(" ".join(read_so_far))
-                        summary_audio = speak_cached(summary_text, absolute_path(SUMMARY_CACHE_DIR, summary_audio_file_name))
+                            task = LLMTask(summarize, " ".join(read_so_far))
+                            summary_text = run_llm_task(task)
+
                         print("\n========SUMMARY=======\n")
                         print(summary_text)
+
+                        if not summary_text or not summary_text.strip():
+                            play(tts_main, vc_back_p)
+                            continue
+
+                        summary_audio = speak_cached(summary_text, absolute_path(SUMMARY_CACHE_DIR, summary_audio_file_name))
                         non_blocking_play(tts_main, summary_audio, "Press 's' to stop summary", stopping_summary_p)
-                        play(tts_main, back_pause_menu_p)
+                        play(tts_main, vc_back_p)
                         continue
+
                     # QUERY RESOLUTION
                     elif choice == "x":
                         # Announce query mode
@@ -404,24 +477,30 @@ def main():
                         if question is None or not question.strip():
                             # No question → back to voice control
                             play(tts_main, vc_back_p)
-                            # time.sleep(1)
                             continue   # <── stays inside voice mode
+
                         # Generate answer
                         play(tts_main, generating_answer_p)
-                        answer = answer_query(" ".join(read_so_far), question)
+                        task = LLMTask(
+                            answer_query,
+                            " ".join(read_so_far),
+                            question
+                        )
+                        answer = run_llm_task(task)
+
                         print("\n========ANSWER=======\n")
                         print(answer)
-                        if not answer.strip():
+
+                        if not answer or not answer.strip():
                             play(tts_main, vc_back_p)
-                            # time.sleep(1)
                             continue
                         # Speak the answer
                         answer_audio = speak(answer)
                         non_blocking_play(tts_main, answer_audio, "Press 's' to stop response", stopping_response_p)
                         # Finished answer → back to voice mode
                         play(tts_main, vc_back_p)
-                        # time.sleep(1)
                         continue  # <── stay inside voice mode
+
                     # QUIT
                     elif choice == "q":
                         # SAVE STATE BEFORE EXIT

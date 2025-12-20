@@ -8,17 +8,12 @@
 import os
 import pickle
 from core.utils import absolute_path, ensure_dir
+from core.constants import STATE_DIR, STATE_FILE, SENTENCE_CACHE_DIR, SUMMARY_CACHE_DIR
 
 # Directories for internal persistence
-STATE_DIR = absolute_path("results", "state")
 ensure_dir(STATE_DIR)
-SENTENCE_CACHE_DIR = absolute_path("results", "prompt_cache", "sentences")
 ensure_dir(SENTENCE_CACHE_DIR)
-SUMMARY_CACHE_DIR = absolute_path("results", "prompt_cache", "summaries")
 ensure_dir(SUMMARY_CACHE_DIR)
-
-# Single state file for reading module
-STATE_FILE = os.path.join(STATE_DIR, "reading_state.pkl")
 
 # ------------------------------------------------------------
 # Save state to disk
@@ -63,23 +58,28 @@ def load_state():
 # ------------------------------------------------------------
 # Delete save file when task is finished
 # ------------------------------------------------------------
+def _clear_dir(dir_path: str, label: str):
+    if not os.path.exists(dir_path):
+        return
+
+    try:
+        for name in os.listdir(dir_path):
+            path = absolute_path(dir_path, name)
+            if os.path.isfile(path):
+                os.remove(path)
+    except OSError as e:
+        print(f"[{label}] ERROR: Could not clear cache ({e}).")
+
+
 def clear_state():
     """Remove saved reading progress."""
-    ensure_dir(SENTENCE_CACHE_DIR)
-    ensure_dir(SUMMARY_CACHE_DIR)
-    try:
-        for file in os.listdir(SENTENCE_CACHE_DIR):
-            os.remove(absolute_path(SENTENCE_CACHE_DIR, file))
-    except:
-            print("[SENTENCE CACHE] ERROR: Could not delete sentence cache.")
-    try:
-        for file in os.listdir(SUMMARY_CACHE_DIR):
-            os.remove(absolute_path(SUMMARY_CACHE_DIR, file))
-    except:
-            print("[SUMMARY CACHE] ERROR: Could not delete summary cache.")
+
+    _clear_dir(SENTENCE_CACHE_DIR, "SENTENCE CACHE")
+    _clear_dir(SUMMARY_CACHE_DIR, "SUMMARY CACHE")
+
     if os.path.exists(STATE_FILE):
         try:
             os.remove(STATE_FILE)
             print("[STATE] Cleared saved reading progress.")
-        except:
-            print("[STATE] ERROR: Could not delete state file.")
+        except OSError as e:
+            print(f"[STATE] ERROR: Could not delete state file ({e}).")

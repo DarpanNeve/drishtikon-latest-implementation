@@ -45,6 +45,16 @@ def split_into_sentences(
 
     return chunks
 
+def split_into_sentences(text):
+    raw_chunks = text.split("SENT_GRP")
+    chunks = []
+    for piece in raw_chunks:
+        piece = piece.strip()
+        if not piece:
+            continue
+        piece = piece.replace('\n', ' ')
+        chunks.append(piece)
+    return chunks
 if __name__ == "__main__":
     sample = (
     "This is a test. OCR text can be messy. "

@@ -1,29 +1,18 @@
 # core/logger.py
 import datetime
 import sys
-import os
-
-# Assuming core.utils functions are necessary for path resolution
-from core.utils import absolute_path, ensure_dir 
+from core.utils import ensure_dir 
+from core.constants import LOG_FILE, LOG_DIR, MAX_MSG_LENGTH
 
 # ================================================================
 #  CONFIG AND SETUP
 # ================================================================
-
-# Define paths (These should be consistent across the application)
 try:
-    LOG_DIR = absolute_path("results")
-    LOG_FILE = absolute_path("results", "app.log")
-    
-    # Ensure logging directory exists (Crucial to do this once)
     ensure_dir(LOG_DIR)
 except Exception as e:
     # If path setup fails, log to stderr and use a default file
     print(f"[LOGGER SETUP ERROR] Could not initialize paths: {e}", file=sys.stderr)
     LOG_FILE = "fallback_app.log"
-    
-# Max characters to display from the message in the log file
-MAX_MSG_LENGTH = 300 
 
 # ================================================================
 #  LOGGER FUNCTION

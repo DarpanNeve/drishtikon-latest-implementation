@@ -1,18 +1,17 @@
 # reading/rag.py
 import time
 import os
+import sys
 import tempfile
 import uuid
 from google import genai 
 from google.genai import types
 from google.genai.errors import ClientError
 from dotenv import load_dotenv
+from core.constants import STORE_DISPLAY_NAME
 
 # Load environment variables
-load_dotenv()
-
-# We use a constant display name for persistence across runs.
-STORE_DISPLAY_NAME = "reading-store-display" 
+load_dotenv() 
 
 def _get_or_create_file_search_store(client: genai.Client) -> str:
     """
@@ -136,7 +135,7 @@ def rag_query(question: str, store_name: str) -> str:
         
         # --- ROBUST CITATION CHECK ---
         citations_text = response.candidates[0].grounding_metadata.grounding_chunks
-        print(citations_text)
+        # print(citations_text)
         return (f"{response.text.strip()}\n\n")
 
     except Exception as e:

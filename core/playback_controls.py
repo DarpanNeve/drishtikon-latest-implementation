@@ -6,7 +6,6 @@ import select
 from core.prompts import goodbye_p, generating_answer_p, stopping_summary_p
 from core.tts_player import tts_main
 
-
 # ================================================================
 # CROSS-PLATFORM NON-BLOCKING KEY READ
 # ================================================================
