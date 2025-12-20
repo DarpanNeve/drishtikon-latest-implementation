@@ -74,9 +74,11 @@ def main():
     threading.Thread(target=linux_stop_listener, daemon=True).start()
     play(tts_main, system_ready_p)
 
-    while True:
+    attempt = 0
+    while attempt < 3:
         cmd = listen()
         if not cmd:
+            attempt += 1
             continue
 
         cmd = cmd.lower()
@@ -85,6 +87,7 @@ def main():
         # READING
         # -----------------------------
         if "read" in cmd:
+            attempt = 0
             play(tts_main, opening_reading_p)
             start_process("reading/read.py")
 
@@ -92,6 +95,7 @@ def main():
         # OBJECT DETECTION
         # -----------------------------
         elif "detect" in cmd or "object" in cmd:
+            attempt = 0
             play(tts_main, opening_detection_p)
             start_process("yolo/detect.py")
 
@@ -99,6 +103,7 @@ def main():
         # NAVIGATION (NEW)
         # -----------------------------
         elif "navigate" in cmd or "navigation" in cmd:
+            attempt = 0
             play(tts_main, navigation_p)
 
             destination = get_destination()
@@ -143,7 +148,9 @@ def main():
             break
 
         else:
+            attempt += 1
             play(tts_main, did_not_understand_p)
-
+    if attempt >= 3:
+        play(tts_main, goodbye_p)
 if __name__ == "__main__":
     main()
