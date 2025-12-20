@@ -11,6 +11,7 @@ import io
 from dotenv import load_dotenv
 import google.generativeai as genai
 from ultralytics import YOLO
+from core.navigation.state import DETECTIONS, state_lock
 
 # Ensure project root is in sys.path
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
@@ -89,6 +90,14 @@ def should_announce(label, position, distance):
 #  DETECTION LOGIC
 # ================================================================
 def run_smart_yolo(frame):
+    with state_lock:
+        DETECTIONS.append({
+            "label": label,
+            "position": pos,
+            "distance": dist,
+            "timestamp": time.time()
+        })
+
     """Refined YOLO with distance and position awareness."""
     h, w, _ = frame.shape
     results = yolo_model.predict(frame, verbose=False)[0]

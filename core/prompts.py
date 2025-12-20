@@ -13,7 +13,7 @@ from core.utils import absolute_path
 # ---------------------------
 
 system_ready_p = speak_cached(
-    "System ready. Say read, detect, or exit.",
+    "System ready. Say read, detect, navigate or exit.",
     "system_ready.wav"
 )
 
@@ -25,6 +25,11 @@ opening_reading_p = speak_cached(
 opening_detection_p = speak_cached(
     "Opening object detection module.",
     "opening_detection.wav"
+)
+
+navigation_p = speak_cached(
+    "Opening navigation module.",
+    "opening_navigation.wav"
 )
 
 goodbye_p = speak_cached(
