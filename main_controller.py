@@ -4,12 +4,6 @@ import subprocess
 import threading
 import time
 
-from navigation import location_tracker
-
-PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-if PROJECT_ROOT not in sys.path:
-    sys.path.insert(0, PROJECT_ROOT)
-
 from core.stt import listen
 from core.logger import log
 from core.utils import absolute_path
@@ -18,11 +12,10 @@ from core.prompts import *
 from core.playback_controls import play
 from core.priority_audio import AudioPriority, PriorityAudioManager
 
-from navigation.destination_input import get_destination
-from navigation.maps_client import get_route
-from navigation.navigation_manager import NavigationManager
-
-from navigation.location_tracker import LocationTracker
+from core.navigation.destination_input import get_destination
+from core.navigation.maps_client import get_route
+from core.navigation.navigation_manager import NavigationManager
+from core.navigation.location_tracker import LocationTracker
 
 # ================================================================
 # PROCESS TRACKING
@@ -56,15 +49,17 @@ def linux_stop_listener():
 # SUBPROCESS LAUNCHER
 # ================================================================
 
-def start_process(relative_path):
-    target = absolute_path(relative_path)
-    p = subprocess.Popen([sys.executable, target])
+def start_module(module_name: str):
+    p = subprocess.Popen(
+        [sys.executable, "-m", module_name]
+    )
     active_processes.append(p)
 
     while p.poll() is None:
         time.sleep(0.1)
 
     active_processes.remove(p)
+
 
 # ================================================================
 # MAIN LOOP
@@ -89,7 +84,7 @@ def main():
         if "read" in cmd:
             attempt = 0
             play(tts_main, opening_reading_p)
-            start_process("reading/read.py")
+            start_module("reading.read")
 
         # -----------------------------
         # OBJECT DETECTION
@@ -97,7 +92,7 @@ def main():
         elif "detect" in cmd or "object" in cmd:
             attempt = 0
             play(tts_main, opening_detection_p)
-            start_process("yolo/detect.py")
+            start_module("yolo.detect")
 
         # -----------------------------
         # NAVIGATION (NEW)

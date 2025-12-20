@@ -13,11 +13,6 @@ import google.generativeai as genai
 from ultralytics import YOLO
 from core.navigation.state import DETECTIONS, state_lock
 
-# Ensure project root is in sys.path
-PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-if PROJECT_ROOT not in sys.path:
-    sys.path.insert(0, PROJECT_ROOT)
-
 from core.priority_audio import AudioPriority, PriorityAudioManager
 from core.utils import absolute_path, ensure_dir, load_credential_path
 from core.tts import speak
