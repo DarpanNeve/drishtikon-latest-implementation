@@ -52,7 +52,7 @@ def split_into_sentences(text):
         piece = piece.strip()
         if not piece:
             continue
-        piece = piece.replace('\n', ' ')
+        piece = piece.replace('\n', '...')
         chunks.append(piece)
     return chunks
 if __name__ == "__main__":
