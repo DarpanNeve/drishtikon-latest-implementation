@@ -1,5 +1,7 @@
-import googlemaps
+# navigation/maps_client.py
+
 import os
+import googlemaps
 
 GOOGLE_MAPS_API_KEY = os.getenv("GOOGLE_MAPS_API_KEY")
 gmaps = googlemaps.Client(key=GOOGLE_MAPS_API_KEY)
@@ -7,7 +9,7 @@ gmaps = googlemaps.Client(key=GOOGLE_MAPS_API_KEY)
 
 def get_route(origin_coords, destination_text):
     """
-    Fetch walking route with turn-by-turn steps
+    Fetch walking route and return simplified structure.
     """
     try:
         directions = gmaps.directions(
@@ -19,13 +21,20 @@ def get_route(origin_coords, destination_text):
         if not directions:
             return None
 
-        route = directions[0]
-        leg = route["legs"][0]
+        leg = directions[0]["legs"][0]
+
+        steps = []
+        for step in leg["steps"]:
+            instruction = step["html_instructions"]
+            distance = step["distance"]["text"]
+            steps.append({
+                "instruction": f"{instruction}. Walk for {distance}."
+            })
 
         return {
-            "steps": leg["steps"],
+            "steps": steps,
             "duration": leg["duration"]["text"],
-            "distance": leg["distance"]["text"]
+            "distance": leg["distance"]["text"],
         }
 
     except Exception as e:

@@ -11,14 +11,11 @@ import io
 from dotenv import load_dotenv
 import google.generativeai as genai
 from ultralytics import YOLO
-from core.navigation.state import DETECTIONS, state_lock
 
 from core.priority_audio import AudioPriority, PriorityAudioManager
 from core.utils import absolute_path, ensure_dir, load_credential_path
 from core.tts import speak
 from core.tts_player import tts_main
-from core.logger import log
-from core.playback_controls import play, non_blocking_play
 from core.prompts import *
 
 load_dotenv()
@@ -85,14 +82,6 @@ def should_announce(label, position, distance):
 #  DETECTION LOGIC
 # ================================================================
 def run_smart_yolo(frame):
-    with state_lock:
-        DETECTIONS.append({
-            "label": label,
-            "position": pos,
-            "distance": dist,
-            "timestamp": time.time()
-        })
-
     """Refined YOLO with distance and position awareness."""
     h, w, _ = frame.shape
     results = yolo_model.predict(frame, verbose=False)[0]
@@ -146,13 +135,13 @@ def gemini_summary_task(image_path):
 def main():
     ensure_dir(absolute_path("results", "yolo_outputs"))
     # "Select file or press Enter for camera"
-    priority_audio.request_play(select_file_p, AudioPriority.SYSTEM)
+    # priority_audio.request_play(select_file_p, AudioPriority.SYSTEM)
     
-    # Simple logic: If user doesn't pick file, use Camera
-    root = tk.Tk(); root.withdraw()
-    img_path = filedialog.askopenfilename()
-    root.destroy()
-
+    # # Simple logic: If user doesn't pick file, use Camera
+    # root = tk.Tk(); root.withdraw()
+    # img_path = filedialog.askopenfilename()
+    # root.destroy()
+    img_path = None
     cam = cv2.VideoCapture(0) if not img_path else None
     last_yolo_time = 0
 
