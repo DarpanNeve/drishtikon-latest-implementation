@@ -291,7 +291,7 @@ def main():
                 print("\n_________________________________\n")
                 break
             if current_index + 1 == len(sentences):
-                key = "p"
+                key = "v"
                 current_index += 1
             # Non-blocking keypress
             else:
