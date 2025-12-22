@@ -170,7 +170,7 @@ def clear_audio_dir():
 # MAIN
 # ================================================================
 def main():
-    FILLER_ARRAY = [filler_music, filler_music_summary]
+    FILLER_ARRAY = [filler_music, filler_music_summary, fractals]
     FILLER_INDEX = 0
     FILLER = FILLER_ARRAY[FILLER_INDEX]
     ensure_results_dir()
@@ -329,7 +329,7 @@ def main():
                             # No question → back to pause menu
                             play(tts_main, back_pause_menu_p)
                             continue
-                        
+
                         # Generate answer
                         play(tts_main, generating_answer_p)
                         task = LLMTask(

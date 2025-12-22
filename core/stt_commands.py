@@ -61,15 +61,15 @@ def listen_for_command(max_attempts=2, is_question=False):
         stt_text = listen()
         print(f"[VOICE] Heard: {stt_text}")
         if is_question:
-            stt_text = stt_text.lower()
-            words = re.split(r'\b\W+\b', stt_text)
-            for ix in range(len(words)):
-                words[ix] = words[ix].strip(".,;!?")
-            counter = Counter(words)
-            if 2 * counter['exit'] / len(words) > 1:
-                command = normalize_command(stt_text)
-            else:
-                command = stt_text
+            command = stt_text
+            if stt_text:
+                stt_text = stt_text.lower()
+                words = re.split(r'\b\W+\b', stt_text)
+                for ix in range(len(words)):
+                    words[ix] = words[ix].strip(".,;!?")
+                counter = Counter(words)
+                if 2 * counter['exit'] / len(words) > 1:
+                    command = normalize_command(stt_text)
         else:
             command = normalize_command(stt_text)
 
