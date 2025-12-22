@@ -13,4 +13,4 @@ audio_files/
 annotated_images/
 results/
 *test/
-yolov8*.pt
+yolov*.pt

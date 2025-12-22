@@ -325,11 +325,11 @@ def main():
                         play(tts_main, ask_query_intro_p)
                         # Listen for user's voice question
                         question = listen_for_command(is_question=True)
-                        if question is None or not question.strip():
+                        if question is None or not question.strip() or question == "q":
                             # No question → back to pause menu
                             play(tts_main, back_pause_menu_p)
-        
                             continue
+                        
                         # Generate answer
                         play(tts_main, generating_answer_p)
                         task = LLMTask(
