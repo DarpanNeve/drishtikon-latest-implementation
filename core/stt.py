@@ -1,6 +1,7 @@
 # stt.py — Raspberry Pi version
 
 import os
+import queue
 import time
 import numpy as np
 import sounddevice as sd
@@ -108,3 +109,103 @@ def listen(duration=5):
         print("[STT] No speech detected.")
 
     return text
+
+# ================================================================
+#  GOOGLE SPEECH-TO-TEXT (STREAMING)
+# ================================================================
+import time
+import queue
+import threading
+import sounddevice as sd
+from google.cloud import speech
+
+SILENCE_THRESHOLD = 3
+
+# Shared state
+audio_queue = queue.Queue()
+stop_event = threading.Event()
+last_speech_time = time.time()
+
+def audio_callback(indata, frames, time_info, status):
+    if status:
+        print(status)
+    audio_queue.put(bytes(indata))
+
+def listen_continuous():
+    global last_speech_time
+    stop_event.clear()
+    last_speech_time = time.time()
+    full_transcript = []
+
+    def request_generator():
+        # This keeps feeding Google until we set the stop_event
+        while not stop_event.is_set():
+            try:
+                chunk = audio_queue.get(timeout=0.1)
+                yield speech.StreamingRecognizeRequest(audio_content=chunk)
+            except queue.Empty:
+                continue
+
+    def response_loop(responses):
+        global last_speech_time
+        try:
+            for response in responses:
+                if stop_event.is_set():
+                    break
+                if not response.results:
+                    continue
+
+                result = response.results[0]
+                transcript = result.alternatives[0].transcript
+                
+                # HEARTBEAT: Update timer whenever Google says anything
+                last_speech_time = time.time()
+
+                if not result.is_final:
+                    print(f"[STT] Live: {transcript}", end="\r")
+                else:
+                    print(f"\n[STT] Confirmed: {transcript}")
+                    full_transcript.append(transcript)
+        except Exception as e:
+            if not stop_event.is_set():
+                print(f"[STT] Response Error: {e}")
+
+    # 1. Start Microphone
+    with sd.InputStream(samplerate=SAMPLE_RATE, channels=CHANNELS, 
+                        dtype='int16', callback=audio_callback):
+        
+        print(f"[STT] Listening... (Auto-stop after {SILENCE_THRESHOLD}s)")
+
+        # 2. Setup Google Stream
+        config = speech.RecognitionConfig(
+            encoding=speech.RecognitionConfig.AudioEncoding.LINEAR16,
+            sample_rate_hertz=SAMPLE_RATE,
+            language_code="en-US",
+            enable_automatic_punctuation=True
+        )
+        streaming_config = speech.StreamingRecognitionConfig(
+            config=config, interim_results=True, single_utterance=False
+        )
+
+        responses = speech_client.streaming_recognize(
+            config=streaming_config, 
+            requests=request_generator()
+        )
+
+        # 3. Run the response processor in a background thread
+        t = threading.Thread(target=response_loop, args=(responses,))
+        t.daemon = True
+        t.start()
+
+        # 4. MONITOR LOOP (Main Thread)
+        # This runs constantly and doesn't wait for Google
+        while not stop_event.is_set():
+            time.sleep(0.1) 
+            if time.time() - last_speech_time > SILENCE_THRESHOLD:
+                print(f"\n[STT] {SILENCE_THRESHOLD}s silence. Closing...")
+                stop_event.set() # Tells the generator and response loop to exit
+
+        # Wait for thread to clean up
+        t.join(timeout=1.0)
+
+    return " ".join(full_transcript)

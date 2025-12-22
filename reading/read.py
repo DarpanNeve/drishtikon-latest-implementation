@@ -15,9 +15,10 @@ import google.generativeai as genai
 
 from core.config import init_gemini
 from core.constants import RESULTS_DIR, AUDIO_DIR, PROMPT_CACHE_DIR, READING_INPUTS_DIR, SENTENCE_CACHE_DIR, SUMMARY_CACHE_DIR
+from core.stt import listen_continuous
 from core.utils import absolute_path, ensure_dir, load_credential_path
 from core.tts import speak
-from core.stt_commands import listen_for_command
+from core.stt_commands import helper_for_exit, listen_for_command
 from core.tts_player import tts_main
 from core.logger import log
 from core.text_utils import split_into_sentences
@@ -324,8 +325,8 @@ def main():
                         # Announce query mode
                         play(tts_main, ask_query_intro_p)
                         # Listen for user's voice question
-                        question = listen_for_command(is_question=True)
-                        if question is None or not question.strip() or question == "q":
+                        question = listen_continuous()
+                        if question is None or not question.strip() or helper_for_exit(question) == "q":
                             # No question → back to pause menu
                             play(tts_main, back_pause_menu_p)
                             continue
@@ -418,8 +419,8 @@ def main():
                         # Announce rag mode
                         play(tts_main, ask_query_intro_p)
                         # Listen for user's voice question
-                        question = listen_for_command(is_question=True)
-                        if question is None or not question.strip():
+                        question = listen_continuous()
+                        if question is None or not question.strip() or helper_for_exit(question) == "q":
                             # No question → back to voice mode
                             play(tts_main, vc_back_p)
                             continue
@@ -475,8 +476,8 @@ def main():
                         # Announce query mode
                         play(tts_main, ask_query_intro_p)
                         # Listen for user's voice question
-                        question = listen_for_command(is_question=True)
-                        if question is None or not question.strip():
+                        question = listen_continuous()
+                        if question is None or not question.strip() or helper_for_exit(question) == "q":
                             # No question → back to voice control
                             play(tts_main, vc_back_p)
                             continue   # <── stays inside voice mode

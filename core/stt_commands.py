@@ -43,6 +43,18 @@ def normalize_command(text):
                 return command
     return None
 
+def helper_for_exit(stt_text):
+    if stt_text:
+        stt_text = stt_text.lower()
+        words = re.split(r'\b\W+\b', stt_text)
+        for ix in range(len(words)):
+            words[ix] = words[ix].strip(".,;!?")
+        counter = Counter(words)
+        if 2 * counter['exit'] / len(words) > 1:
+            command = normalize_command(stt_text)
+            return command
+    return stt_text
+
 def listen_for_command(max_attempts=2, is_question=False):
     """
     Attempt STT max_attempts times.
