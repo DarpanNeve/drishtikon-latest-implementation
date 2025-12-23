@@ -9,6 +9,15 @@ from google.genai import types
 from google.genai.errors import ClientError
 from dotenv import load_dotenv
 from core.constants import STORE_DISPLAY_NAME
+from core.llm_runner import run_llm_task
+from core.llm_task import LLMTask
+from core.playback_controls import non_blocking_play, play
+from core.stt import listen_continuous
+from core.stt_commands import helper_for_exit
+from core.tts import speak
+from core.utils import retry, timeit
+from core.tts_player import tts_main
+from core.prompts import *
 
 # Load environment variables
 load_dotenv() 
@@ -108,6 +117,8 @@ def upload_text_to_store(text: str) -> str | None:
             os.remove(file_path) # Clean up temp file on failure
         return None
 
+@timeit("[RAG QUERY RESOLUTION]")
+@retry(2)
 def rag_query(question: str, store_name: str) -> str:
     """
     Runs a RAG query against the specified File Search store.
@@ -172,16 +183,16 @@ if __name__ == "__main__":
         print(f"Could not initialize RAG testing due to error: {e}")
         exit()
 
-    print("\nStarting RAG Query Test Loop...")
-    while True:
-        question = input("Ask a question (or hit Enter to quit): ")
-        if not question.strip():
-            break
-        print("=========== RAG ANSWER ==========")
+    # print("\nStarting RAG Query Test Loop...")
+    # while True:
+        # question = input("Ask a question (or hit Enter to quit): ")
+        # if not question.strip():
+        #     break
+        # print("=========== RAG ANSWER ==========")
         # Note: When running __main__, we assume the store has content already
-        answer = rag_query(question, store_name)
-        print(answer)
-        print("=================================\n")
+        # answer = rag_query(question, store_name)
+        # print(answer)
+        # print("=================================\n")
 
     # Optional cleanup (comment out if you want to keep the store)
     # try:
@@ -190,3 +201,32 @@ if __name__ == "__main__":
     #     print("Cleanup successful.")
     # except Exception:
     #     print("Warning: Could not delete store.")
+    # Announce rag mode
+    play(tts_main, ask_query_intro_p)
+    # Listen for user's voice question
+    question = listen_continuous()
+    if question is None or not question.strip() or helper_for_exit(question) == "q":
+        # No question → back to voice mode
+        play(tts_main, vc_back_p)
+
+    else:    
+        # Generate RAG answer
+        play(tts_main, generating_answer_p)
+        # --- RAG CALL ---
+        task = LLMTask(
+            rag_query_voice,
+            question
+        )
+
+        answer = run_llm_task(task)
+        print("\n========RAG ANSWER=======\n")
+        print(answer)
+
+        if not answer or not answer.strip() or answer.startswith("RAG Query Error"):
+            play(tts_main, vc_back_p)
+        else:
+            # Speak the answer
+            answer_audio = speak(answer)
+            non_blocking_play(tts_main, answer_audio, "Press 's' to stop response", stopping_response_p)
+            # Finished answer → back to voice mode
+            play(tts_main, vc_back_p)

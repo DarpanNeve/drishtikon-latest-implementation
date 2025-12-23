@@ -5,6 +5,7 @@ import google.generativeai as genai
 from core.config import init_gemini
 from core.tts import speak
 from core.logger import log
+from core.utils import timeit
 
 # ================================================================
 # GEMINI CONFIG
@@ -15,6 +16,7 @@ GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-1.5-pro")
 # ================================================================
 # SUMMARY FUNCTION
 # ================================================================
+@timeit("[GEMINI SUMMARY]")
 def summarize(text: str) -> str:
     """
     Summarizes a block of text using Gemini.

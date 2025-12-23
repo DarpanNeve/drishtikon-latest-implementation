@@ -78,6 +78,24 @@ def timeit(label="function"):
     return decorator
 
 # =================================================================
+#  DECORATOR TO RETRY FUNCTION EXECUTION
+# =================================================================
+def retry(n):
+    def decorator(fn):
+        def inner(*args, **kwargs):
+            last_error = None
+            for i in range(1, n + 1):
+                print(f"[ATTEMPT {i}]")
+                try:
+                    result = fn(*args, **kwargs)
+                    return result
+                except Exception as e:
+                    last_error = e
+            raise last_error
+        return inner
+    return decorator
+
+# ================================================================
 
 if __name__ == "__main__":
     try:

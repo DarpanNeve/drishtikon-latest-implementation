@@ -6,6 +6,7 @@ import google.generativeai as genai
 from core.tts import speak
 from core.logger import log
 from core.config import init_gemini
+from core.utils import timeit
 
 # ================================================================
 # GEMINI CONFIG
@@ -15,6 +16,7 @@ GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-1.5-pro")
 # ================================================================
 # QUERY FUNCTION
 # ================================================================
+@timeit("[GEMINI QUERY RESOLUTION]")
 def answer_query(text: str, question: str) -> str:
     """
     Answers from a block of text using Gemini.
