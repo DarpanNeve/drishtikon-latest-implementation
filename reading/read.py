@@ -16,7 +16,7 @@ import google.generativeai as genai
 from core.config import init_gemini
 from core.constants import RESULTS_DIR, AUDIO_DIR, PROMPT_CACHE_DIR, READING_INPUTS_DIR, SENTENCE_CACHE_DIR, SUMMARY_CACHE_DIR
 from core.stt import listen_continuous
-from core.utils import absolute_path, ensure_dir, load_credential_path
+from core.utils import absolute_path, ensure_dir, load_credential_path, timeit
 from core.tts import speak
 from core.stt_commands import helper_for_exit, listen_for_command
 from core.tts_player import tts_main
@@ -73,6 +73,7 @@ def optimize_image(image_path):
 # ================================================================
 # GEMINI OCR
 # ================================================================
+@timeit("[GEMINI READ]")
 def gemini_read(image_path, prompt):
     """
     Run Gemini OCR + prompt on the image.
@@ -170,6 +171,7 @@ def clear_audio_dir():
 # ================================================================
 # MAIN
 # ================================================================
+@timeit("[MAIN]")
 def main():
     FILLER_ARRAY = [filler_music, filler_music_summary, fractals]
     FILLER_INDEX = 0

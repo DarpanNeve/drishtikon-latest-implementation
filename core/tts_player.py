@@ -52,7 +52,7 @@ class TTSPlayer:
                 blocksize=1024,
             ) as stream:
 
-                print("[TTSPlayer] Streaming start...")
+                print("[TTSPlayer] Streaming started...")
 
                 while frame_index < total_frames and not self._stop_flag:
                     chunk_end = min(frame_index + 1024, total_frames)
