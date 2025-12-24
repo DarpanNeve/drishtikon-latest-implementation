@@ -3,6 +3,8 @@
 # STT COMMAND NORMALIZATION + RETRY LOGIC
 # Cleaned to match new architecture (no speak_blocking, no tts_prompt)
 # ================================================================
+from collections import Counter
+import re
 from core.stt import listen
 from core.prompts import vc_retry_p
 from core.tts_player import tts_main
@@ -41,6 +43,18 @@ def normalize_command(text):
                 return command
     return None
 
+def helper_for_exit(stt_text):
+    if stt_text:
+        stt_text = stt_text.lower()
+        words = re.split(r'\b\W+\b', stt_text)
+        for ix in range(len(words)):
+            words[ix] = words[ix].strip(".,;!?")
+        counter = Counter(words)
+        if 2 * counter['exit'] / len(words) > 1:
+            command = normalize_command(stt_text)
+            return command
+    return stt_text
+
 def listen_for_command(max_attempts=2, is_question=False):
     """
     Attempt STT max_attempts times.
@@ -60,6 +74,14 @@ def listen_for_command(max_attempts=2, is_question=False):
         print(f"[VOICE] Heard: {stt_text}")
         if is_question:
             command = stt_text
+            if stt_text:
+                stt_text = stt_text.lower()
+                words = re.split(r'\b\W+\b', stt_text)
+                for ix in range(len(words)):
+                    words[ix] = words[ix].strip(".,;!?")
+                counter = Counter(words)
+                if 2 * counter['exit'] / len(words) > 1:
+                    command = normalize_command(stt_text)
         else:
             command = normalize_command(stt_text)
 

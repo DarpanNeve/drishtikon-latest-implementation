@@ -1,6 +1,7 @@
 # core/utils.py (Raspberry Pi compatible)
 import os
 import sys
+import time
 
 # ================================================================
 #  CUSTOM EXCEPTIONS
@@ -63,12 +64,38 @@ def ensure_dir(path: str):
 
 
 # ================================================================
-#  DEBUGGING OPTIONAL
+#  DECORATOR TO TIME FUNCTIONS
 # ================================================================
-def debug_path(label: str, path: str):
-    """Prints a labeled path for debugging purposes."""
-    print(f"[DEBUG PATH] {label}: {path}")
+def timeit(label="function"):
+    def decorator(fn):
+        def inner(*args, **kwargs):
+            start = time.time()
+            result = fn(*args, **kwargs)
+            end = time.time()
+            print(f"{label} ran for {round(end - start, 2)} s...")
+            return result
+        return inner
+    return decorator
 
+# =================================================================
+#  DECORATOR TO RETRY FUNCTION EXECUTION
+# =================================================================
+def retry(n):
+    def decorator(fn):
+        def inner(*args, **kwargs):
+            last_error = None
+            for i in range(1, n + 1):
+                print(f"[ATTEMPT {i}]")
+                try:
+                    result = fn(*args, **kwargs)
+                    return result
+                except Exception as e:
+                    last_error = e
+            raise last_error
+        return inner
+    return decorator
+
+# ================================================================
 
 if __name__ == "__main__":
     try:

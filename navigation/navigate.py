@@ -1,13 +1,15 @@
 # navigation/navigate.py
 
 import time
+from core.playback_controls import play
 from core.tts import speak, speak_cached
 from core.tts_player import tts_main
 from core.priority_audio import PriorityAudioManager, AudioPriority
 
-from navigation.destination_input import get_destination
+from navigation.destination_input import get_source_and_destination
 from navigation.maps_client import get_route
-from navigation.location_tracker import LocationTracker
+# from navigation.location_tracker import LocationTracker
+from navigation.navigation_logic import clean_navigation_steps
 from navigation.navigation_manager import NavigationManager
 
 
@@ -17,7 +19,7 @@ def main():
     # ----------------------------
     # Get destination (STT)
     # ----------------------------
-    destination = get_destination(priority_audio)
+    source, destination = get_source_and_destination(priority_audio)
     if not destination:
         priority_audio.request_play(
             speak_cached("No destination provided.", "no_dest_provided.wav"),
@@ -30,13 +32,13 @@ def main():
     # ----------------------------
     # Get current location
     # ----------------------------
-    tracker = LocationTracker()
-    origin = tracker.get_current_location()
+    # tracker = LocationTracker()
+    # origin = tracker.get_current_location()
 
     # ----------------------------
     # Fetch route
     # ----------------------------
-    route = get_route(origin_coords=origin, destination_text=destination)
+    route = get_route(origin_coords=source, destination_text=destination)
     if not route:
         priority_audio.request_play(
             speak("Sorry, I could not find a route."),
@@ -47,16 +49,19 @@ def main():
     # ----------------------------
     # Speak ETA
     # ----------------------------
-    priority_audio.request_play(
-        speak(f"Estimated time {route['duration']}, distance {route['distance']}."),
-        AudioPriority.NAVIGATION
-    )
+    # priority_audio.request_play(
+    #     speak(f"Estimated time {route['duration']}, distance {route['distance']}."),
+    #     AudioPriority.NAVIGATION
+    # )
+
+    navigation_input_reception_audio = speak(f"Estimated time {route['duration']}, distance {route['distance']}.")
+    play(tts_main, navigation_input_reception_audio)
 
     # ----------------------------
     # Start navigation manager
     # ----------------------------
     nav_manager = NavigationManager(
-        steps=route["steps"],
+        steps=clean_navigation_steps(route["steps"]),
         priority_audio=priority_audio
     )
     nav_manager.start()

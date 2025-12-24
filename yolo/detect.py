@@ -1,6 +1,5 @@
 import os
 import sys
-import subprocess
 import cv2
 import time
 import threading
@@ -16,6 +15,8 @@ from core.priority_audio import AudioPriority, PriorityAudioManager
 from core.utils import absolute_path, ensure_dir, load_credential_path
 from core.tts import speak
 from core.tts_player import tts_main
+from core.logger import log
+from core.playback_controls import play, non_blocking_play
 from core.prompts import *
 
 load_dotenv()
@@ -144,13 +145,13 @@ def gemini_summary_task(image_path):
 def main():
     ensure_dir(absolute_path("results", "yolo_outputs"))
     # "Select file or press Enter for camera"
-    # priority_audio.request_play(select_file_p, AudioPriority.SYSTEM)
+    priority_audio.request_play(select_file_p, AudioPriority.SYSTEM)
     
-    # # Simple logic: If user doesn't pick file, use Camera
-    # root = tk.Tk(); root.withdraw()
-    # img_path = filedialog.askopenfilename()
-    # root.destroy()
-    img_path = None
+    # Simple logic: If user doesn't pick file, use Camera
+    root = tk.Tk(); root.withdraw()
+    img_path = filedialog.askopenfilename()
+    root.destroy()
+
     cam = cv2.VideoCapture(0) if not img_path else None
     last_yolo_time = 0
 
@@ -169,21 +170,12 @@ def main():
         key = cv2.waitKey(1) & 0xFF
 
         # AUTO-YOLO with Spatial Awareness (Every 8 seconds)
-        YOLO_FAST = 0.6     # moving / dynamic
-        YOLO_SLOW = 2.0     # static scene
-        current_yolo_interval = YOLO_FAST
-
-        if time.time() - last_yolo_time > current_yolo_interval:
+        if time.time() - last_yolo_time > 8:
             if not gemini_active and not tts_main.is_playing():
                 desc = run_smart_yolo(frame)
-
                 if desc:
                     audio_path = speak(desc, is_detection=True)
                     priority_audio.request_play(audio_path, AudioPriority.DETECTION)
-                    current_yolo_interval = YOLO_FAST   # scene changing
-                else:
-                    current_yolo_interval = YOLO_SLOW   # scene stable
-
                 last_yolo_time = time.time()
 
         # MANUAL GEMINI (G)

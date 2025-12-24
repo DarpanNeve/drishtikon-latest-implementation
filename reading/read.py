@@ -15,9 +15,10 @@ import google.generativeai as genai
 
 from core.config import init_gemini
 from core.constants import RESULTS_DIR, AUDIO_DIR, PROMPT_CACHE_DIR, READING_INPUTS_DIR, SENTENCE_CACHE_DIR, SUMMARY_CACHE_DIR
-from core.utils import absolute_path, ensure_dir, load_credential_path
+from core.stt import listen_continuous
+from core.utils import absolute_path, ensure_dir, load_credential_path, timeit
 from core.tts import speak
-from core.stt_commands import listen_for_command
+from core.stt_commands import helper_for_exit, listen_for_command
 from core.tts_player import tts_main
 from core.logger import log
 from core.text_utils import split_into_sentences
@@ -72,6 +73,7 @@ def optimize_image(image_path):
 # ================================================================
 # GEMINI OCR
 # ================================================================
+@timeit("[GEMINI READ]")
 def gemini_read(image_path, prompt):
     """
     Run Gemini OCR + prompt on the image.
@@ -169,8 +171,9 @@ def clear_audio_dir():
 # ================================================================
 # MAIN
 # ================================================================
+@timeit("[MAIN]")
 def main():
-    FILLER_ARRAY = [filler_music, filler_music_summary]
+    FILLER_ARRAY = [filler_music, filler_music_summary, fractals]
     FILLER_INDEX = 0
     FILLER = FILLER_ARRAY[FILLER_INDEX]
     ensure_results_dir()
@@ -291,7 +294,7 @@ def main():
                 print("\n_________________________________\n")
                 break
             if current_index + 1 == len(sentences):
-                key = "p"
+                key = "v"
                 current_index += 1
             # Non-blocking keypress
             else:
@@ -324,12 +327,12 @@ def main():
                         # Announce query mode
                         play(tts_main, ask_query_intro_p)
                         # Listen for user's voice question
-                        question = listen_for_command(is_question=True)
-                        if question is None or not question.strip():
+                        question = listen_continuous()
+                        if question is None or not question.strip() or helper_for_exit(question) == "q":
                             # No question → back to pause menu
                             play(tts_main, back_pause_menu_p)
-        
                             continue
+
                         # Generate answer
                         play(tts_main, generating_answer_p)
                         task = LLMTask(
@@ -418,8 +421,8 @@ def main():
                         # Announce rag mode
                         play(tts_main, ask_query_intro_p)
                         # Listen for user's voice question
-                        question = listen_for_command(is_question=True)
-                        if question is None or not question.strip():
+                        question = listen_continuous()
+                        if question is None or not question.strip() or helper_for_exit(question) == "q":
                             # No question → back to voice mode
                             play(tts_main, vc_back_p)
                             continue
@@ -475,8 +478,8 @@ def main():
                         # Announce query mode
                         play(tts_main, ask_query_intro_p)
                         # Listen for user's voice question
-                        question = listen_for_command(is_question=True)
-                        if question is None or not question.strip():
+                        question = listen_continuous()
+                        if question is None or not question.strip() or helper_for_exit(question) == "q":
                             # No question → back to voice control
                             play(tts_main, vc_back_p)
                             continue   # <── stays inside voice mode

@@ -6,12 +6,13 @@ class AudioPriority:
     NAVIGATION = 1
     GEMINI = 2
     SYSTEM = 3
+    NONE = 4
 
 class PriorityAudioManager:
     def __init__(self, tts_player):
         self.tts = tts_player
         self._lock = threading.Lock()
-        self.current_priority = None
+        self.current_priority = AudioPriority.NONE
 
     def request_play(self, audio_path, priority):
         """
@@ -47,7 +48,7 @@ class PriorityAudioManager:
             with self._lock:
                 # Hard stop everything
                 self.tts.stop()
-                self.current_priority = None
+                self.current_priority = AudioPriority.NONE
 
                 # Play exit audio
                 self.tts.play(audio_path)
@@ -61,4 +62,4 @@ class PriorityAudioManager:
         Call periodically from main loop.
         """
         if not self.tts.is_playing():
-            self.current_priority = None
+            self.current_priority = AudioPriority.NONE

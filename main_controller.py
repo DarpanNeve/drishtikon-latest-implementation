@@ -13,11 +13,6 @@ from core.prompts import *
 from core.playback_controls import play
 from core.priority_audio import AudioPriority, PriorityAudioManager
 
-from navigation.destination_input import get_destination
-from navigation.maps_client import get_route
-from navigation.navigation_manager import NavigationManager
-from navigation.location_tracker import LocationTracker
-
 # ================================================================
 # PROCESS TRACKING
 # ================================================================
@@ -71,7 +66,7 @@ def main():
     play(tts_main, system_ready_p)
 
     attempt = 0
-    while attempt < 3:
+    while attempt < 2:
         cmd = listen()
         if not cmd:
             attempt += 1
@@ -87,6 +82,13 @@ def main():
             play(tts_main, opening_reading_p)
             start_module("reading.read")
 
+        # -----------------------------
+        # RAG SEARCH
+        # -----------------------------
+        elif "search" in cmd:
+            attempt = 0
+            play(tts_main, opening_search_p)
+            start_module("reading.rag")
         # -----------------------------
         # OBJECT DETECTION
         # -----------------------------
@@ -111,9 +113,10 @@ def main():
             break
 
         else:
+            print(cmd)
             attempt += 1
             play(tts_main, did_not_understand_p)
-    if attempt >= 3:
+    if attempt >= 2:
         play(tts_main, goodbye_p)
 if __name__ == "__main__":
     main()

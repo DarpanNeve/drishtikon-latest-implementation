@@ -13,13 +13,18 @@ from core.utils import absolute_path
 # ---------------------------
 
 system_ready_p = speak_cached(
-    "System ready. Say read, detect, navigate or exit.",
+    "System ready. Say read, search, detect, navigate or exit.",
     "system_ready.wav"
 )
 
 opening_reading_p = speak_cached(
     "Opening reading module.",
     "opening_reading.wav"
+)
+
+opening_search_p = speak_cached(
+    "Opening search module.",
+    "opening_search.wav"
 )
 
 opening_detection_p = speak_cached(
@@ -71,7 +76,7 @@ switch_to_rasp_p = speak_cached(
 )
 
 # ---------------------------
-# SYSTEM PROMPTS
+# READING AND SYSTEM PROMPTS
 # ---------------------------
 resume_previous_task_p = speak_cached(
     "Shall I continue with the previous reading task?",
@@ -209,6 +214,34 @@ exiting_detection_module_p = speak_cached(
 )
 
 # ---------------------------
+# NAVIGATE PROMPTS
+# ---------------------------
+navigation_src_p = speak_cached(
+    "Please tell me your current location.",
+    "source_prompt.wav"
+)
+
+navigation_dest_p = speak_cached(
+    "Please tell me your destination.",
+    "destination_prompt.wav"
+)
+
+navigation_src_err_p = speak_cached(
+    "I did not hear the current location.",
+    "source_error.wav"
+)
+
+navigation_dest_err_p = speak_cached(
+    "I did not hear the destination.",
+    "destination_error.wav"
+)
+
+navigation_stop_p = speak_cached(
+    "Navigation stopped.",
+    "nav_stopped.wav"
+)
+
+# ---------------------------
 # BEEPS (non‑TTS files)
 # ---------------------------
 pause_beep = absolute_path("sounds", "pause_beep.wav")
@@ -219,3 +252,4 @@ resume_beep = absolute_path("sounds", "resume_beep.wav")
 # ---------------------------
 filler_music = absolute_path("test", "reading", "grants_opus.wav")
 filler_music_summary = absolute_path("test", "reading", "grants_new_etude.wav")
+fractals = absolute_path("test", "reading", "fractals.wav")
