@@ -13,11 +13,6 @@ from core.prompts import *
 from core.playback_controls import play
 from core.priority_audio import AudioPriority, PriorityAudioManager
 
-from navigation.destination_input import get_destination
-from navigation.maps_client import get_route
-from navigation.navigation_manager import NavigationManager
-from navigation.location_tracker import LocationTracker
-
 # ================================================================
 # PROCESS TRACKING
 # ================================================================

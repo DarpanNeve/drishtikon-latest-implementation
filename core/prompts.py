@@ -76,7 +76,7 @@ switch_to_rasp_p = speak_cached(
 )
 
 # ---------------------------
-# SYSTEM PROMPTS
+# READING AND SYSTEM PROMPTS
 # ---------------------------
 resume_previous_task_p = speak_cached(
     "Shall I continue with the previous reading task?",
@@ -211,6 +211,34 @@ generating_rag_answer_p = speak_cached(
 exiting_detection_module_p = speak_cached(
     "Exiting detection module.",
     "exiting_detection_module.wav"
+)
+
+# ---------------------------
+# NAVIGATE PROMPTS
+# ---------------------------
+navigation_src_p = speak_cached(
+    "Please tell me your current location.",
+    "source_prompt.wav"
+)
+
+navigation_dest_p = speak_cached(
+    "Please tell me your destination.",
+    "destination_prompt.wav"
+)
+
+navigation_src_err_p = speak_cached(
+    "I did not hear the current location.",
+    "source_error.wav"
+)
+
+navigation_dest_err_p = speak_cached(
+    "I did not hear the destination.",
+    "destination_error.wav"
+)
+
+navigation_stop_p = speak_cached(
+    "Navigation stopped.",
+    "nav_stopped.wav"
 )
 
 # ---------------------------
