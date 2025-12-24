@@ -6,7 +6,7 @@ def clean_instruction(text):
     """
     Remove HTML tags and make instruction TTS-friendly
     """
-    text = re.sub('<[^<]+?>', '', text)
+    text = re.sub("<[^<]+?>", "", text)
     text = text.replace("Head", "Start")
     text = text.replace("Continue", "Keep going")
     return text

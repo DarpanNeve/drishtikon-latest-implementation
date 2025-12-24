@@ -48,7 +48,7 @@ GEMINI_MODEL = os.getenv("GEMINI_MODEL")
 if GEMINI_API_KEY:
     genai.configure(api_key=GEMINI_API_KEY)
 
-yolo_model = YOLO("yolov8n.pt")
+yolo_model = YOLO("yolov8s.pt")
 
 # ================================================================
 #  NEW FEATURE HELPERS (Spatial & Distance)
@@ -81,6 +81,8 @@ def should_announce(label, position, distance):
 # ================================================================
 #  DETECTION LOGIC
 # ================================================================
+CONF_THRESHOLD = 0.45
+
 def run_smart_yolo(frame):
     """Refined YOLO with distance and position awareness."""
     h, w, _ = frame.shape
@@ -89,6 +91,13 @@ def run_smart_yolo(frame):
     announcements = []
     
     for box in results.boxes:
+        conf = float(box.conf[0])
+        if conf < CONF_THRESHOLD:
+            continue
+
+        # if conf < 0.55 and label in ["person", "car", "bus", "truck"]:
+        #     gemini_summary_task(img_path)
+
         label = results.names[int(box.cls[0])]
         x1, y1, x2, y2 = map(int, box.xyxy[0])
         
