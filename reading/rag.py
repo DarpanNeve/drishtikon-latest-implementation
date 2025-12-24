@@ -202,31 +202,34 @@ if __name__ == "__main__":
     # except Exception:
     #     print("Warning: Could not delete store.")
     # Announce rag mode
-    play(tts_main, ask_query_intro_p)
-    # Listen for user's voice question
-    question = listen_continuous()
-    if question is None or not question.strip() or helper_for_exit(question) == "q":
-        # No question → back to voice mode
-        play(tts_main, vc_back_p)
-
-    else:    
-        # Generate RAG answer
-        play(tts_main, generating_answer_p)
-        # --- RAG CALL ---
-        task = LLMTask(
-            rag_query_voice,
-            question
-        )
-
-        answer = run_llm_task(task)
-        print("\n========RAG ANSWER=======\n")
-        print(answer)
-
-        if not answer or not answer.strip() or answer.startswith("RAG Query Error"):
+    while True:
+        play(tts_main, ask_query_intro_p)
+        # Listen for user's voice question
+        question = listen_continuous()
+        if question is None or not question.strip() or helper_for_exit(question) == "q":
+            # No question → back to voice mode
             play(tts_main, vc_back_p)
-        else:
-            # Speak the answer
-            answer_audio = speak(answer)
-            non_blocking_play(tts_main, answer_audio, "Press 's' to stop response", stopping_response_p)
-            # Finished answer → back to voice mode
-            play(tts_main, vc_back_p)
+            break
+
+        else:    
+            # Generate RAG answer
+            play(tts_main, generating_answer_p)
+            # --- RAG CALL ---
+            task = LLMTask(
+                rag_query_voice,
+                question
+            )
+
+            answer = run_llm_task(task)
+            print("\n========RAG ANSWER=======\n")
+            print(answer)
+
+            if not answer or not answer.strip() or answer.startswith("RAG Query Error"):
+                play(tts_main, vc_back_p)
+                break
+            else:
+                # Speak the answer
+                answer_audio = speak(answer)
+                non_blocking_play(tts_main, answer_audio, "Press 's' to stop response", stopping_response_p)
+                # Finished answer → back to voice mode
+                play(tts_main, vc_back_p)

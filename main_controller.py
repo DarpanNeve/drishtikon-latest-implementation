@@ -90,7 +90,7 @@ def main():
         # -----------------------------
         # RAG SEARCH
         # -----------------------------
-        if "search" in cmd:
+        elif "search" in cmd:
             attempt = 0
             play(tts_main, opening_search_p)
             start_module("reading.rag")
@@ -118,6 +118,7 @@ def main():
             break
 
         else:
+            print(cmd)
             attempt += 1
             play(tts_main, did_not_understand_p)
     if attempt >= 2:
