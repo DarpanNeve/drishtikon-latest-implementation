@@ -14,6 +14,7 @@ from core.llm_task import LLMTask
 from core.playback_controls import non_blocking_play, play
 from core.stt import listen_continuous
 from core.stt_commands import helper_for_exit
+from core.text_utils import split_into_sentences_rag
 from core.tts import speak
 from core.utils import retry, timeit
 from core.tts_player import tts_main
@@ -223,13 +224,17 @@ if __name__ == "__main__":
             answer = run_llm_task(task)
             print("\n========RAG ANSWER=======\n")
             print(answer)
-
+            sentences = split_into_sentences_rag(answer)
+            
             if not answer or not answer.strip() or answer.startswith("RAG Query Error"):
                 play(tts_main, vc_back_p)
                 break
             else:
                 # Speak the answer
-                answer_audio = speak(answer)
-                non_blocking_play(tts_main, answer_audio, "Press 's' to stop response", stopping_response_p)
+                for i in range(len(sentences)):
+                    answer_audio = speak(sentences[i])
+                    wants_to_break_loop = non_blocking_play(tts_main, answer_audio, "Press 's' to stop response", stopping_response_p, in_a_loop=True)
+                    if wants_to_break_loop:
+                        break
                 # Finished answer → back to voice mode
                 play(tts_main, vc_back_p)
