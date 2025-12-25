@@ -116,6 +116,7 @@ def run_smart_yolo(frame):
 
 def gemini_summary_task(image_path):
     global gemini_active
+    gemini_active = True
     priority_audio.request_play(processing_p, AudioPriority.SYSTEM)
 
     try:
@@ -130,12 +131,28 @@ def gemini_summary_task(image_path):
         model = genai.GenerativeModel(GEMINI_MODEL)
         response = model.generate_content([
             {"mime_type": "image/jpeg", "data": buf.getvalue()},
-            "Describe this scene for a visually impaired user in 2 sentences. Focus on obstacles."
+            """You are a navigation assistant for a blind person. Analyze this image and provide ACTIONABLE guidance in 2-3 short sentences.
+
+RULES:
+- Use clock positions (12 o'clock = straight ahead, 3 = right, 9 = left)
+- Mention SPECIFIC obstacles: "Chair at 2 o'clock, about 3 steps away"
+- Warn about hazards: stairs, curbs, wet floors, uneven surfaces
+- Suggest safe path: "Clear path at 11 o'clock"
+- Mention people and their movement: "Person approaching from 3 o'clock"
+- Be concise but specific. No poetic language.
+
+Example: "Person standing at 12 o'clock, 5 steps ahead. Table with chairs blocking 2 to 4 o'clock. Clear path on your left at 9 o'clock."
+"""
         ])
 
         text = getattr(response, "text", "Unable to describe scene.")
         audio_path = speak(text)
         priority_audio.request_play(audio_path, AudioPriority.GEMINI)
+
+    except Exception as e:
+        print(f"[Gemini] ERROR: {e}")
+        error_audio = speak("Unable to process the image.")
+        priority_audio.request_play(error_audio, AudioPriority.SYSTEM)
 
     finally:
         gemini_active = False
@@ -178,9 +195,11 @@ def main():
                     priority_audio.request_play(audio_path, AudioPriority.DETECTION)
                 last_yolo_time = time.time()
 
-        # MANUAL GEMINI (G)
+        # MANUAL GEMINI (G) - Create snapshot to avoid race condition
         if key == ord('g') and not gemini_active:
-            threading.Thread(target=gemini_summary_task, args=(current_img_path,), daemon=True).start()
+            gemini_snapshot_path = absolute_path("results", "yolo_outputs", "gemini_snapshot.jpg")
+            cv2.imwrite(gemini_snapshot_path, frame)
+            threading.Thread(target=gemini_summary_task, args=(gemini_snapshot_path,), daemon=True).start()
 
         # QUIT (Q)
         elif key == ord('q'):

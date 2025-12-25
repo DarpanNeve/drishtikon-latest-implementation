@@ -14,3 +14,7 @@ annotated_images/
 results/
 *test/
 yolov8*.pt
+./.env
+*/.venv
+.venv/
+.env
