@@ -241,6 +241,13 @@ navigation_stop_p = speak_cached(
     "nav_stopped.wav"
 )
 
+dest_not_p = speak_cached("No destination provided.", "no_dest_provided.wav")
+
+path_not_found_p = speak_cached("Sorry, I could not find a route.", "path_not_found.wav")
+
+nearby_place_p = speak_cached("What nearby place are you looking for?", "nearby_place_prompt.wav")
+nearby_place_err_p = speak_cached("I did not hear the nearby place.", "nearby_place_error.wav")
+
 # ---------------------------
 # BEEPS (non‑TTS files)
 # ---------------------------

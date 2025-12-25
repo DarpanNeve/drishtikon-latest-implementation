@@ -1,71 +1,42 @@
 # navigation/navigate.py
 
-import time
 from core.playback_controls import play
-from core.tts import speak, speak_cached
+from core.tts import speak
 from core.tts_player import tts_main
-from core.priority_audio import PriorityAudioManager, AudioPriority
+from core.priority_audio import PriorityAudioManager
+from core.prompts import dest_not_p, path_not_found_p
 
-from navigation.destination_input import get_source_and_destination
+from navigation.destination_input import get_source_and_nearby_place
 from navigation.maps_client import get_route
-# from navigation.location_tracker import LocationTracker
-from navigation.navigation_logic import clean_navigation_steps
-from navigation.navigation_manager import NavigationManager
+from navigation.navigation_logic import build_direction_gist
 
 
 def main():
     priority_audio = PriorityAudioManager(tts_main)
 
-    # ----------------------------
-    # Get destination (STT)
-    # ----------------------------
-    source, destination = get_source_and_destination(priority_audio)
-    if not destination:
-        priority_audio.request_play(
-            speak_cached("No destination provided.", "no_dest_provided.wav"),
-            AudioPriority.SYSTEM
-        )
-        while priority_audio.tts.is_playing():
-            time.sleep(0.05)
+    source, nearby_request = get_source_and_nearby_place(priority_audio)
+    if not nearby_request:
+        play(tts_main, dest_not_p)
         return
 
-    # ----------------------------
-    # Get current location
-    # ----------------------------
-    # tracker = LocationTracker()
-    # origin = tracker.get_current_location()
-
-    # ----------------------------
-    # Fetch route
-    # ----------------------------
-    route = get_route(origin_coords=source, destination_text=destination)
+    route = get_route(origin_coords=source, nearby_query=nearby_request)
     if not route:
-        priority_audio.request_play(
-            speak("Sorry, I could not find a route."),
-            AudioPriority.SYSTEM
-        )
+        play(tts_main, path_not_found_p)
         return
 
-    # ----------------------------
     # Speak ETA
-    # ----------------------------
-    # priority_audio.request_play(
-    #     speak(f"Estimated time {route['duration']}, distance {route['distance']}."),
-    #     AudioPriority.NAVIGATION
-    # )
-
-    navigation_input_reception_audio = speak(f"Estimated time {route['duration']}, distance {route['distance']}.")
-    play(tts_main, navigation_input_reception_audio)
-
-    # ----------------------------
-    # Start navigation manager
-    # ----------------------------
-    nav_manager = NavigationManager(
-        steps=clean_navigation_steps(route["steps"]),
-        priority_audio=priority_audio
+    eta_audio = speak(
+        f"The nearest {nearby_request} is {route['distance']} away. "
+        f"It will take approximately {route['duration']} by walking."
     )
-    nav_manager.start()
-    nav_manager.join()
+    play(tts_main, eta_audio)
+
+    # Speak gist
+    gist_text = build_direction_gist(route["steps"])
+    gist_audio = speak(
+        f"To reach {route['place_name']}, {gist_text}"
+    )
+    play(tts_main, gist_audio)
 
 
 if __name__ == "__main__":
