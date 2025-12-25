@@ -5,7 +5,7 @@
 # ================================================================
 import re
 from typing import List
-def split_into_sentences(
+def split_into_sentences_rag(
     text: str,
     min_len: int = 80,
     max_len: int = 220,
@@ -24,7 +24,8 @@ def split_into_sentences(
 
     if not text:
         return []
-
+    
+    text = text.replace("*", "")
     # Split after sentence-like punctuation, keep punctuation attached
     raw_chunks = re.split(r'(?<=[.!?;])', text)
 
