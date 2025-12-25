@@ -22,12 +22,7 @@ speech_client = init_stt(CRED_PATH)
 # ================================================================
 #  AUDIO RECORDING (Raspberry Pi Safe)
 # ================================================================
-def record_audio(duration=5):
-    """
-    Records audio using ALSA (sounddevice).
-    Returns raw PCM bytes.
-    """
-
+def record_audio(duration=5, device=None):
     print(f"[STT] Recording {duration}s...")
 
     try:
@@ -35,41 +30,62 @@ def record_audio(duration=5):
             int(duration * SAMPLE_RATE),
             samplerate=SAMPLE_RATE,
             channels=CHANNELS,
-            dtype="int16"
+            dtype="int16",
+            device=device
         )
         sd.wait()
+        
+        rms = np.sqrt(np.mean(audio.astype(np.float32) ** 2))
+        print(f"[STT] Recording complete. RMS level: {rms:.0f}")
+        
+        if rms < 100:
+            print("[STT] WARNING: Audio level very low - check microphone")
+        elif rms < 500:
+            target_rms = 2000
+            gain = target_rms / max(rms, 1)
+            audio = np.clip(audio.astype(np.float32) * gain, -32768, 32767).astype(np.int16)
+            print(f"[STT] Audio boosted by {gain:.1f}x")
 
     except Exception as e:
         log("STT", "-", f"Microphone error: {e}")
         print(f"[STT] Microphone error: {e}")
         return None
 
-    print("[STT] Recording complete.")
     return audio.tobytes()
 
 # ================================================================
 #  GOOGLE SPEECH-TO-TEXT
 # ================================================================
 def speech_to_text(audio_bytes):
-    """
-    Sends audio to Google STT → returns transcript.
-    """
-
     if not speech_client:
         print("[STT] Client not initialized.")
         return None
+
+    import soundfile as sf
+    import io
+    
+    debug_path = "/tmp/stt_debug.wav"
+    try:
+        audio_array = np.frombuffer(audio_bytes, dtype=np.int16)
+        sf.write(debug_path, audio_array, SAMPLE_RATE)
+        print(f"[STT] Debug audio saved to {debug_path}")
+    except Exception as e:
+        print(f"[STT] Could not save debug audio: {e}")
 
     audio = speech.RecognitionAudio(content=audio_bytes)
 
     config = speech.RecognitionConfig(
         encoding=speech.RecognitionConfig.AudioEncoding.LINEAR16,
         sample_rate_hertz=SAMPLE_RATE,
-        language_code="en-IN",
-        enable_automatic_punctuation=True
+        language_code="en-US",
+        enable_automatic_punctuation=True,
+        audio_channel_count=CHANNELS,
+        model="command_and_search"
     )
 
     try:
         response = speech_client.recognize(config=config, audio=audio)
+        print(f"[STT] API response results: {len(response.results)}")
 
     except Exception as e:
         log("STT", "-", f"Google STT error: {e}")
