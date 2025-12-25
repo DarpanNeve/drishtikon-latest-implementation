@@ -37,37 +37,56 @@ class TTSPlayer:
             self._stop_flag = False
             return
 
-        # Force shape: (frames, channels)
         if len(data.shape) == 1:
             data = data.reshape(-1, 1)
 
         total_frames = data.shape[0]
         frame_index = 0
+        max_retries = 3
+        stream = None
+
+        for attempt in range(max_retries):
+            try:
+                sd.stop()
+                time.sleep(0.05 * (attempt + 1))
+                
+                stream = sd.OutputStream(
+                    samplerate=samplerate,
+                    channels=data.shape[1],
+                    dtype="int16",
+                    blocksize=1024,
+                )
+                stream.start()
+                print("[TTSPlayer] Streaming started...")
+                break
+            except Exception as e:
+                print(f"[TTSPlayer] Stream open attempt {attempt + 1} failed: {e}")
+                if attempt == max_retries - 1:
+                    self._stop_flag = False
+                    self._thread = None
+                    return
+                time.sleep(0.1 * (attempt + 1))
 
         try:
-            with sd.OutputStream(
-                samplerate=samplerate,
-                channels=data.shape[1],
-                dtype="int16",
-                blocksize=1024,
-            ) as stream:
+            while frame_index < total_frames and not self._stop_flag:
+                chunk_end = min(frame_index + 1024, total_frames)
+                chunk = data[frame_index:chunk_end]
 
-                print("[TTSPlayer] Streaming started...")
+                try:
+                    stream.write(chunk)
+                except Exception as e:
+                    print(f"[TTSPlayer] ERROR during stream.write: {e}")
+                    break
 
-                while frame_index < total_frames and not self._stop_flag:
-                    chunk_end = min(frame_index + 1024, total_frames)
-                    chunk = data[frame_index:chunk_end]
-
-                    try:
-                        stream.write(chunk)
-                    except Exception as e:
-                        print(f"[TTSPlayer] ERROR during stream.write: {e}")
-                        break
-
-                    frame_index = chunk_end
+                frame_index = chunk_end
 
         finally:
-            # reset state
+            if stream:
+                try:
+                    stream.stop()
+                    stream.close()
+                except Exception:
+                    pass
             self._stop_flag = False
             self._thread = None
             print("[TTSPlayer] Streaming finished.")
@@ -100,21 +119,17 @@ class TTSPlayer:
     # Public API: stop
     # ------------------------------------------------------------
     def stop(self):
-        """
-        Stop playback completely and cleanly.
-        """
-        if self._thread and self._thread.is_alive():
-            print("[TTSPlayer] STOP called.")
-            self._stop_flag = True
-
-            # Immediately kill all active sounddevice streams
-            sd.stop()
-
-            # Allow thread to terminate
-            self._thread.join(timeout=1.5)
-
-        self._thread = None
-        self._stop_flag = False
+        try:
+            if self._thread and self._thread.is_alive():
+                print("[TTSPlayer] STOP called.")
+                self._stop_flag = True
+                sd.stop()
+                self._thread.join(timeout=1.5)
+        except Exception as e:
+            print(f"[TTSPlayer] Stop error: {e}")
+        finally:
+            self._thread = None
+            self._stop_flag = False
 
 
     # ------------------------------------------------------------
