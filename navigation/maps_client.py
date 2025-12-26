@@ -12,7 +12,7 @@ def find_nearest_place(source, query):
     Uses Places API to find nearest matching place.
     """
     places = gmaps.places(
-        query=query,
+        query=source + " " + query,
         location=source,
         radius=2000
     )
