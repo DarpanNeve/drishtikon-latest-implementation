@@ -237,6 +237,11 @@ generating_rag_answer_p = speak_cached(
     "generating_rag_answer.wav"
 )
 
+could_not_find_answer_p = speak_cached(
+    "Sorry, I could not find an answer to this.",
+    "could_not_find_answer.wav"
+)
+
 
 # ================================================================
 # 9. NAVIGATION PROMPTS

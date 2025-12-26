@@ -308,9 +308,10 @@ def main():
                 while True:
                     print("\nPaused. Options:")
                     print(" p = resume this part")
+                    print(" r = search")
+                    print(" x = ask a query")
                     print(" m = summarize what has been read so far")
                     print(" q = quit reading module")
-                    print(" x = ask a query")
                     sys.stdout.flush()
                     choice = sys.stdin.readline().strip().lower()
 
@@ -321,6 +322,65 @@ def main():
                         print("[PATH]", sentence_audio)
                         tts_main.play(sentence_audio)
                         break
+                    
+                    # RAG SEARCH
+                    elif choice == "r":
+                        # Announce rag mode
+                        play(tts_main, ask_query_intro_p)
+                        # Listen for user's voice question
+                        question = listen_continuous()
+                        if question is None or not question.strip() or helper_for_exit(question) == "q":
+                            # No question → back to voice mode
+                            play(tts_main, back_pause_menu_p)
+                            continue
+                        # Generate RAG answer
+                        play(tts_main, generating_answer_p)
+                        # --- RAG CALL ---
+                        task = LLMTask(
+                            rag_query_voice,
+                            question
+                        )
+
+                        answer = run_llm_task(task)
+                        print("\n========RAG ANSWER=======\n")
+                        print(answer)
+
+                        if not answer or not answer.strip() or answer.startswith("RAG Query Error"):
+                            play(tts_main, could_not_find_answer_p)
+                            play(tts_main, back_pause_menu_p)
+                            continue
+                        # Speak the answer
+                        answer_audio = speak(answer)
+                        non_blocking_play(tts_main, answer_audio, "Press 's' to stop response", stopping_response_p)
+                        # Finished answer → back to voice mode
+                        play(tts_main, back_pause_menu_p)
+                        continue
+
+                    # SUMMARY
+                    elif choice == "m":
+                        if not read_so_far:
+                            play(tts_main, no_content_yet_p)
+                            play(tts_main, back_pause_menu_p)
+                            continue
+                        play(tts_main, generating_summary_p)
+                        tts_main.play(filler_music_summary)
+                        summary_audio_file_name = f"summary_0{current_index}.wav" if current_index < 10 else f"summary_{current_index}.wav"
+                        summary_text = "Cached"
+
+                        if not os.path.exists(absolute_path(SUMMARY_CACHE_DIR, summary_audio_file_name)):
+                            task = LLMTask(summarize, " ".join(read_so_far))
+                            summary_text = run_llm_task(task)
+
+                        print("\n========SUMMARY=======\n")
+                        print(summary_text)
+                        if not summary_text or not summary_text.strip():
+                            play(tts_main, back_pause_menu_p)
+                            continue
+
+                        summary_audio = speak_cached(summary_text, absolute_path(SUMMARY_CACHE_DIR, summary_audio_file_name))
+                        non_blocking_play(tts_main, summary_audio, "Press 's' to stop summary", stopping_summary_p)
+                        play(tts_main, back_pause_menu_p)
+                        continue
 
                     # QUERY RESOLUTION
                     elif choice == "x":
@@ -354,33 +414,7 @@ def main():
                         # Finished answer → back to pause menu
                         play(tts_main, back_pause_menu_p)
                         continue
-
-                    # SUMMARY
-                    elif choice == "m":
-                        if not read_so_far:
-                            play(tts_main, no_content_yet_p)
-                            play(tts_main, back_pause_menu_p)
-                            continue
-                        play(tts_main, generating_summary_p)
-                        tts_main.play(filler_music_summary)
-                        summary_audio_file_name = f"summary_0{current_index}.wav" if current_index < 10 else f"summary_{current_index}.wav"
-                        summary_text = "Cached"
-
-                        if not os.path.exists(absolute_path(SUMMARY_CACHE_DIR, summary_audio_file_name)):
-                            task = LLMTask(summarize, " ".join(read_so_far))
-                            summary_text = run_llm_task(task)
-
-                        print("\n========SUMMARY=======\n")
-                        print(summary_text)
-                        if not summary_text or not summary_text.strip():
-                            play(tts_main, back_pause_menu_p)
-                            continue
-
-                        summary_audio = speak_cached(summary_text, absolute_path(SUMMARY_CACHE_DIR, summary_audio_file_name))
-                        non_blocking_play(tts_main, summary_audio, "Press 's' to stop summary", stopping_summary_p)
-                        play(tts_main, back_pause_menu_p)
-                        continue
-
+                    
                     # QUIT
                     elif choice == "q":
                         # SAVE STATE BEFORE EXIT
