@@ -124,34 +124,27 @@ def rag_query(question: str, store_name: str) -> str:
     """
     Runs a RAG query against the specified File Search store.
     """
-    client = genai.Client()    
+    client = genai.Client()
     tool_store_names = [store_name]
-    # ---------------------------------------------------------------------
 
-    try:
-        print(f"Querying store {store_name} using tool name: {store_name} with question: '{question}'")
-        
-        response = client.models.generate_content(
-            model="gemini-2.5-flash",
-            contents=question,
-            config=types.GenerateContentConfig(
-                tools=[
-                    types.Tool(
-                        file_search=types.FileSearch(
-                            file_search_store_names=tool_store_names
-                        )
+    print(f"Querying store {store_name} with question: '{question}'")
+
+    response = client.models.generate_content(
+        model="gemini-2.5-flash",
+        contents=question,
+        config=types.GenerateContentConfig(
+            tools=[
+                types.Tool(
+                    file_search=types.FileSearch(
+                        file_search_store_names=tool_store_names
                     )
-                ]
-            )
+                )
+            ]
         )
-        
-        # --- ROBUST CITATION CHECK ---
-        citations_text = response.candidates[0].grounding_metadata.grounding_chunks
-        # print(citations_text)
-        return (f"{response.text.strip()}\n\n")
+    )
 
-    except Exception as e:
-        return f"RAG Query Error: {e}"
+    return f"{response.text.strip()}\n\n"
+
 
 def rag_query_voice(question: str) -> str:
     """
