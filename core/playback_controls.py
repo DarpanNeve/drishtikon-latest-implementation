@@ -3,7 +3,7 @@ import os
 import sys
 import select
 
-from core.prompts import goodbye_p, generating_answer_p, stopping_summary_p, pause_beep
+from core.prompts import goodbye_p, generating_answer_p, stopping_response_p, pause_beep
 from core.tts_player import tts_main
 
 # ================================================================
@@ -41,7 +41,7 @@ def non_blocking_play(
     tts=tts_main,
     audio_file_name=generating_answer_p,
     cmd_to_stop_audio_file="Press 's' to stop response",
-    stop_audio_file_name=stopping_summary_p,
+    stop_audio_file_name=stopping_response_p,
     in_a_loop = False
 ):
     tts.play(audio_file_name)

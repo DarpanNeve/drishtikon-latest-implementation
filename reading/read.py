@@ -390,7 +390,7 @@ def main():
                                 "current_index": current_index,
                             }
                             save_state(task_state)
-                        play(tts_main, exiting_module_p)
+                        play(tts_main, exiting_reading_module_p)
                         return
                     else:
                         tts_main.play(FILLER)
@@ -515,7 +515,7 @@ def main():
                                 "current_index": current_index,
                             }
                             save_state(task_state)
-                        play(tts_main, exiting_module_p)
+                        play(tts_main, exiting_reading_module_p)
                         return
                     else:
                         print("Invalid option.")

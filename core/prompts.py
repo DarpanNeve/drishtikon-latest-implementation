@@ -8,14 +8,45 @@
 from core.tts import speak_cached
 from core.utils import absolute_path
 
-# ---------------------------
-# MAIN CONTROLLER PROMPTS
-# ---------------------------
+
+# ================================================================
+# 1. GLOBAL SYSTEM / LIFECYCLE PROMPTS
+# ================================================================
 
 system_ready_p = speak_cached(
     "System ready. Say read, search, detect, navigate or exit.",
     "system_ready.wav"
 )
+
+did_not_understand_p = speak_cached(
+    "I did not understand.",
+    "did_not_understand.wav"
+)
+
+emergency_stop_p = speak_cached(
+    "Emergency stop activated.",
+    "emergency_stop.wav"
+)
+
+goodbye_p = speak_cached(
+    "Goodbye.",
+    "goodbye.wav"
+)
+
+module_not_found_p = speak_cached(
+    "Module not found.",
+    "module_not_found.wav"
+)
+
+launch_error_p = speak_cached(
+    "Unable to launch module.",
+    "launch_error.wav"
+)
+
+
+# ================================================================
+# 2. MODULE ENTRY / EXIT PROMPTS
+# ================================================================
 
 opening_reading_p = speak_cached(
     "Opening reading module.",
@@ -37,52 +68,39 @@ navigation_p = speak_cached(
     "opening_navigation.wav"
 )
 
-goodbye_p = speak_cached(
-    "Goodbye.",
-    "goodbye.wav"
+exiting_reading_module_p = speak_cached(
+    "Exiting reading module.",
+    "exiting_reading_module.wav"
 )
 
-did_not_understand_p = speak_cached(
-    "I did not understand.",
-    "did_not_understand.wav"
+exiting_detection_module_p = speak_cached(
+    "Exiting detection module.",
+    "exiting_detection_module.wav"
 )
 
-emergency_stop_p = speak_cached(
-    "Emergency stop activated.",
-    "emergency_stop.wav"
+exiting_navigation_module_p = speak_cached(
+    "Exiting navigation module.",
+    "exiting_navigation_module.wav"
 )
 
-module_not_found_p = speak_cached(
-    "Module not found.",
-    "module_not_found.wav"
+exiting_search_module_p = speak_cached(
+    "Exiting search module.",
+    "exiting_search_module.wav"
 )
 
-launch_error_p = speak_cached(
-    "Unable to launch module.",
-    "launch_error.wav"
-)
+# ================================================================
+# 3. CAMERA & IMAGE CAPTURE PROMPTS
+# ================================================================
 
-# ---------------------------
-# CAMERA PROMPTS
-# ---------------------------
 cap_intro_p = speak_cached(
-    "Press SPACE to capture, ESC to exit.", 
+    "Press SPACE to capture, ESC to exit.",
     "capture_image_intro.wav"
 )
 
 switch_to_rasp_p = speak_cached(
-    "Switching to Raspberry Pi camera mode.", 
+    "Switching to Raspberry Pi camera mode.",
     "switch_to_rasp.wav"
 )
-
-# ---------------------------
-# READING AND SYSTEM PROMPTS
-# ---------------------------
-resume_previous_task_p = speak_cached(
-    "Shall I continue with the previous reading task?",
-    "resume_previous_task.wav"
-)
-
 
 select_file_p = speak_cached(
     "Select an image file. If you cancel, I will open the camera.",
@@ -97,6 +115,16 @@ no_file_p = speak_cached(
 no_image_exit_p = speak_cached(
     "No image captured. Exiting.",
     "no_image_exit.wav"
+)
+
+
+# ================================================================
+# 4. READING FLOW PROMPTS
+# ================================================================
+
+resume_previous_task_p = speak_cached(
+    "Shall I continue with the previous reading task?",
+    "resume_previous_task.wav"
 )
 
 processing_p = speak_cached(
@@ -119,19 +147,16 @@ all_done_p = speak_cached(
     "all_sentences_done.wav"
 )
 
-exiting_module_p = speak_cached(
-    "Exiting reading module.",
-    "exiting_module.wav"
-)
-
 return_to_reading_p = speak_cached(
     "Returning to reading.",
     "return_to_reading.wav"
 )
 
-# -------------------------
-# ASK QUERY PROMPTS
-# -------------------------
+
+# ================================================================
+# 5. QUERY / ANSWER PROMPTS (NON-RAG)
+# ================================================================
+
 ask_query_intro_p = speak_cached(
     "Please ask a question.",
     "please_ask_a_question.wav"
@@ -147,9 +172,11 @@ stopping_response_p = speak_cached(
     "stopping_response.wav"
 )
 
-# ---------------------------
-# PAUSE MENU PROMPTS
-# ---------------------------
+
+# ================================================================
+# 6. PAUSE MENU / SUMMARY PROMPTS
+# ================================================================
+
 no_content_yet_p = speak_cached(
     "No content has been read yet.",
     "no_content_yet.wav"
@@ -170,9 +197,11 @@ back_pause_menu_p = speak_cached(
     "back_pause_menu.wav"
 )
 
-# ---------------------------
-# VOICE CONTROL PROMPTS
-# ---------------------------
+
+# ================================================================
+# 7. VOICE CONTROL PROMPTS
+# ================================================================
+
 vc_intro_p = speak_cached(
     "Voice control. Say summary, resume, doubt, search or quit.",
     "voice_intro.wav"
@@ -193,29 +222,26 @@ vc_back_p = speak_cached(
     "back_voice.wav"
 )
 
-# ---------------------------
-# RAG SEARCH PROMPTS
-# ---------------------------
+
+# ================================================================
+# 8. RAG SEARCH PROMPTS
+# ================================================================
+
 enter_rag_mode_p = speak_cached(
     "This is RAG search. Ask your query",
     "rag_intro.wav"
 )
+
 generating_rag_answer_p = speak_cached(
     "Searching...",
     "generating_rag_answer.wav"
 )
 
-# ---------------------------
-# DETECT PROMPTS
-# ---------------------------
-exiting_detection_module_p = speak_cached(
-    "Exiting detection module.",
-    "exiting_detection_module.wav"
-)
 
-# ---------------------------
-# NAVIGATE PROMPTS
-# ---------------------------
+# ================================================================
+# 9. NAVIGATION PROMPTS
+# ================================================================
+
 navigation_src_p = speak_cached(
     "Please tell me your current location.",
     "source_prompt.wav"
@@ -241,22 +267,36 @@ navigation_stop_p = speak_cached(
     "nav_stopped.wav"
 )
 
-dest_not_p = speak_cached("No destination provided.", "no_dest_provided.wav")
+dest_not_p = speak_cached(
+    "No destination provided.",
+    "no_dest_provided.wav"
+)
 
-path_not_found_p = speak_cached("Sorry, I could not find a route.", "path_not_found.wav")
+path_not_found_p = speak_cached(
+    "Sorry, I could not find a route.",
+    "path_not_found.wav"
+)
 
-nearby_place_p = speak_cached("What nearby place are you looking for?", "nearby_place_prompt.wav")
-nearby_place_err_p = speak_cached("I did not hear the nearby place.", "nearby_place_error.wav")
+nearby_place_p = speak_cached(
+    "What nearby place are you looking for?",
+    "nearby_place_prompt.wav"
+)
 
-# ---------------------------
-# BEEPS (non‑TTS files)
-# ---------------------------
+nearby_place_err_p = speak_cached(
+    "I did not hear the nearby place.",
+    "nearby_place_error.wav"
+)
+
+
+# ================================================================
+# 10. NON-TTS AUDIO ASSETS
+# ================================================================
+
+# Beeps
 pause_beep = absolute_path("sounds", "pause_beep.wav")
 resume_beep = absolute_path("sounds", "resume_beep.wav")
 
-# ---------------------------
-# FILLER MUSIC
-# ---------------------------
+# Filler music
 filler_music = absolute_path("test", "reading", "grants_opus.wav")
 filler_music_summary = absolute_path("test", "reading", "grants_new_etude.wav")
 fractals = absolute_path("test", "reading", "fractals.wav")

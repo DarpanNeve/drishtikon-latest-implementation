@@ -173,35 +173,7 @@ def rag_query_voice(question: str) -> str:
     answer = rag_query(question, store_name)
     return answer
 
-if __name__ == "__main__":
-    # Example to test the rag_query function independently
-    client = genai.Client()
-    
-    # 1. Get the store name using the helper (This ensures the store exists)
-    try:
-        store_name = _get_or_create_file_search_store(client)
-    except Exception as e:
-        print(f"Could not initialize RAG testing due to error: {e}")
-        exit()
-
-    # print("\nStarting RAG Query Test Loop...")
-    # while True:
-        # question = input("Ask a question (or hit Enter to quit): ")
-        # if not question.strip():
-        #     break
-        # print("=========== RAG ANSWER ==========")
-        # Note: When running __main__, we assume the store has content already
-        # answer = rag_query(question, store_name)
-        # print(answer)
-        # print("=================================\n")
-
-    # Optional cleanup (comment out if you want to keep the store)
-    # try:
-    #     print(f"Cleaning up store: {store_name}...")
-    #     client.file_search_stores.delete(name=store_name, config={'force': True})
-    #     print("Cleanup successful.")
-    # except Exception:
-    #     print("Warning: Could not delete store.")
+def main():
     # Announce rag mode
     while True:
         play(tts_main, ask_query_intro_p)
@@ -209,7 +181,7 @@ if __name__ == "__main__":
         question = listen_continuous()
         if question is None or not question.strip() or helper_for_exit(question) == "q":
             # No question → back to voice mode
-            play(tts_main, vc_back_p)
+            play(tts_main, exiting_search_module_p)
             break
 
         else:    
@@ -227,7 +199,7 @@ if __name__ == "__main__":
             sentences = split_into_sentences_rag(answer)
             
             if not answer or not answer.strip() or answer.startswith("RAG Query Error"):
-                play(tts_main, vc_back_p)
+                play(tts_main, exiting_search_module_p)
                 break
             else:
                 # Speak the answer
@@ -238,3 +210,7 @@ if __name__ == "__main__":
                         break
                 # Finished answer → back to voice mode
                 play(tts_main, vc_back_p)
+
+
+if __name__ == "__main__":
+    main()

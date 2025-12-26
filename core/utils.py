@@ -89,7 +89,7 @@ def retry(n):
                 try:
                     result = fn(*args, **kwargs)
                     return result
-                except Exception as e:
+                except result is None or Exception as e:
                     last_error = e
             raise last_error
         return inner

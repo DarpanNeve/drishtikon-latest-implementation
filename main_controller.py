@@ -114,7 +114,6 @@ def main():
 
         else:
             print(cmd)
-            attempt += 1
             play(tts_main, did_not_understand_p)
     if attempt >= 2:
         play(tts_main, goodbye_p)
