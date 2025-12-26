@@ -25,7 +25,13 @@ else:
             return None
         return None
 
-
+def wait_for_key(valid_keys=None, sleep=0.05):
+    while True:
+        key = read_key_nonblocking()
+        if key:
+            if valid_keys is None or key in valid_keys:
+                return key
+        time.sleep(sleep)
 # ================================================================
 # PLAY AUDIO (BLOCKING)
 # ================================================================

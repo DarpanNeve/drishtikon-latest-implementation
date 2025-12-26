@@ -28,7 +28,7 @@ from core.summarize import summarize
 from core.query import answer_query
 from core.prompts import *
 from core.state import *
-from core.playback_controls import play, non_blocking_play, read_key_nonblocking
+from core.playback_controls import play, non_blocking_play, read_key_nonblocking, wait_for_key
 from reading.rag import upload_text_to_store, rag_query_voice
 
 load_dotenv()
@@ -188,7 +188,7 @@ def main():
         play(tts_main, resume_previous_task_p)
         print("\nPrevious reading task found.")
         print("Press 'y' to continue or any other key to start a new task.")
-        choice = sys.stdin.readline().strip().lower()
+        choice = wait_for_key()
         if choice == "y":
             print("[STATE] Resuming saved reading task...")
             sentences = state["sentences"]
@@ -313,7 +313,7 @@ def main():
                     print(" m = summarize what has been read so far")
                     print(" q = quit reading module")
                     sys.stdout.flush()
-                    choice = sys.stdin.readline().strip().lower()
+                    choice = wait_for_key()
 
                     # RESUME → restart sentence
                     if choice == "p":
