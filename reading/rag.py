@@ -14,6 +14,7 @@ from core.llm_task import LLMTask
 from core.playback_controls import non_blocking_play, play
 from core.stt import listen_continuous
 from core.stt_commands import helper_for_exit
+from core.text_utils import split_into_sentences_rag
 from core.tts import speak
 from core.utils import retry, timeit
 from core.tts_player import tts_main
@@ -123,34 +124,27 @@ def rag_query(question: str, store_name: str) -> str:
     """
     Runs a RAG query against the specified File Search store.
     """
-    client = genai.Client()    
+    client = genai.Client()
     tool_store_names = [store_name]
-    # ---------------------------------------------------------------------
 
-    try:
-        print(f"Querying store {store_name} using tool name: {store_name} with question: '{question}'")
-        
-        response = client.models.generate_content(
-            model="gemini-2.5-flash",
-            contents=question,
-            config=types.GenerateContentConfig(
-                tools=[
-                    types.Tool(
-                        file_search=types.FileSearch(
-                            file_search_store_names=tool_store_names
-                        )
+    print(f"Querying store {store_name} with question: '{question}'")
+
+    response = client.models.generate_content(
+        model="gemini-2.5-flash",
+        contents=question,
+        config=types.GenerateContentConfig(
+            tools=[
+                types.Tool(
+                    file_search=types.FileSearch(
+                        file_search_store_names=tool_store_names
                     )
-                ]
-            )
+                )
+            ]
         )
-        
-        # --- ROBUST CITATION CHECK ---
-        citations_text = response.candidates[0].grounding_metadata.grounding_chunks
-        # print(citations_text)
-        return (f"{response.text.strip()}\n\n")
+    )
 
-    except Exception as e:
-        return f"RAG Query Error: {e}"
+    return f"{response.text.strip()}\n\n"
+
 
 def rag_query_voice(question: str) -> str:
     """
@@ -172,35 +166,7 @@ def rag_query_voice(question: str) -> str:
     answer = rag_query(question, store_name)
     return answer
 
-if __name__ == "__main__":
-    # Example to test the rag_query function independently
-    client = genai.Client()
-    
-    # 1. Get the store name using the helper (This ensures the store exists)
-    try:
-        store_name = _get_or_create_file_search_store(client)
-    except Exception as e:
-        print(f"Could not initialize RAG testing due to error: {e}")
-        exit()
-
-    # print("\nStarting RAG Query Test Loop...")
-    # while True:
-        # question = input("Ask a question (or hit Enter to quit): ")
-        # if not question.strip():
-        #     break
-        # print("=========== RAG ANSWER ==========")
-        # Note: When running __main__, we assume the store has content already
-        # answer = rag_query(question, store_name)
-        # print(answer)
-        # print("=================================\n")
-
-    # Optional cleanup (comment out if you want to keep the store)
-    # try:
-    #     print(f"Cleaning up store: {store_name}...")
-    #     client.file_search_stores.delete(name=store_name, config={'force': True})
-    #     print("Cleanup successful.")
-    # except Exception:
-    #     print("Warning: Could not delete store.")
+def main():
     # Announce rag mode
     while True:
         play(tts_main, ask_query_intro_p)
@@ -208,7 +174,7 @@ if __name__ == "__main__":
         question = listen_continuous()
         if question is None or not question.strip() or helper_for_exit(question) == "q":
             # No question → back to voice mode
-            play(tts_main, vc_back_p)
+            play(tts_main, exiting_search_module_p)
             break
 
         else:    
@@ -223,13 +189,21 @@ if __name__ == "__main__":
             answer = run_llm_task(task)
             print("\n========RAG ANSWER=======\n")
             print(answer)
-
+            sentences = split_into_sentences_rag(answer)
+            
             if not answer or not answer.strip() or answer.startswith("RAG Query Error"):
-                play(tts_main, vc_back_p)
+                play(tts_main, exiting_search_module_p)
                 break
             else:
                 # Speak the answer
-                answer_audio = speak(answer)
-                non_blocking_play(tts_main, answer_audio, "Press 's' to stop response", stopping_response_p)
+                for i in range(len(sentences)):
+                    answer_audio = speak(sentences[i])
+                    wants_to_break_loop = non_blocking_play(tts_main, answer_audio, "Press 's' to stop response", stopping_response_p, in_a_loop=True)
+                    if wants_to_break_loop:
+                        break
                 # Finished answer → back to voice mode
                 play(tts_main, vc_back_p)
+
+
+if __name__ == "__main__":
+    main()

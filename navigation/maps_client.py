@@ -7,14 +7,41 @@ GOOGLE_MAPS_API_KEY = os.getenv("GOOGLE_MAPS_API_KEY")
 gmaps = googlemaps.Client(key=GOOGLE_MAPS_API_KEY)
 
 
-def get_route(origin_coords, destination_text):
+def find_nearest_place(source, query):
     """
-    Fetch walking route and return simplified structure.
+    Uses Places API to find nearest matching place.
+    """
+    places = gmaps.places(
+        query=source + " " + query,
+        location=source,
+        radius=2000
+    )
+
+    if not places["results"]:
+        return None
+
+    place = places["results"][0]
+    location = place["geometry"]["location"]
+
+    return {
+        "name": place["name"],
+        "coords": (location["lat"], location["lng"])
+    }
+
+
+def get_route(origin_coords, nearby_query):
+    """
+    1. Find nearest place
+    2. Fetch walking route to it
     """
     try:
+        nearest = find_nearest_place(origin_coords, nearby_query)
+        if not nearest:
+            return None
+
         directions = gmaps.directions(
             origin=origin_coords,
-            destination=destination_text,
+            destination=nearest["coords"],
             mode="walking"
         )
 
@@ -25,16 +52,16 @@ def get_route(origin_coords, destination_text):
 
         steps = []
         for step in leg["steps"]:
-            instruction = step["html_instructions"]
-            distance = step["distance"]["text"]
             steps.append({
-                "instruction": f"{instruction}. Walk for {distance}."
+                "instruction": step["html_instructions"],
+                "distance": step["distance"]["text"]
             })
 
         return {
+            "place_name": nearest["name"],
             "steps": steps,
             "duration": leg["duration"]["text"],
-            "distance": leg["distance"]["text"],
+            "distance": leg["distance"]["text"]
         }
 
     except Exception as e:

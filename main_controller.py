@@ -5,9 +5,6 @@ import threading
 import time
 
 from core.stt import listen
-from core.logger import log
-from core.tts import speak
-from core.utils import absolute_path
 from core.tts_player import tts_main
 from core.prompts import *
 from core.playback_controls import play
@@ -85,7 +82,7 @@ def main():
         # -----------------------------
         # RAG SEARCH
         # -----------------------------
-        elif "search" in cmd:
+        elif "search" in cmd or "find" in cmd:
             attempt = 0
             play(tts_main, opening_search_p)
             start_module("reading.rag")
@@ -114,7 +111,6 @@ def main():
 
         else:
             print(cmd)
-            attempt += 1
             play(tts_main, did_not_understand_p)
     if attempt >= 2:
         play(tts_main, goodbye_p)

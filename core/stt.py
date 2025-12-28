@@ -132,7 +132,7 @@ def listen(duration=5):
 # ================================================================
 
 SILENCE_THRESHOLD = 3          # seconds
-SILENCE_RMS_THRESHOLD = 500    # tune per mic/environment
+SILENCE_RMS_THRESHOLD = 100    # tune per mic/environment
 
 # Shared state
 audio_queue = queue.Queue()
