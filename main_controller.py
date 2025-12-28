@@ -82,7 +82,7 @@ def main():
         # -----------------------------
         # RAG SEARCH
         # -----------------------------
-        elif "search" in cmd or "find" in cmd or "suraj" in cmd:
+        elif "search" in cmd or "find" in cmd:
             attempt = 0
             play(tts_main, opening_search_p)
             start_module("reading.rag")

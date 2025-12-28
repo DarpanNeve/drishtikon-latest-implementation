@@ -64,7 +64,7 @@ def speech_to_text(audio_bytes):
     config = speech.RecognitionConfig(
         encoding=speech.RecognitionConfig.AudioEncoding.LINEAR16,
         sample_rate_hertz=SAMPLE_RATE,
-        language_code="en-IN",
+        language_code="en-US",
         enable_automatic_punctuation=True
     )
 
