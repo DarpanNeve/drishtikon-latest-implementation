@@ -54,7 +54,7 @@ def log(service: str = "MAIN", image_path: str = "-", message: str = "", time_ta
             f.write(entry)
         
         # Optional: Print to console for immediate visibility during development
-        # sys.stdout.write(entry)
+        sys.stdout.write(entry)
         
     except Exception as e:
         # Critical failure: log to standard error output
